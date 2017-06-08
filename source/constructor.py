@@ -17,7 +17,7 @@ class Constructor(object):
         self.nodes = horizontals*verticals
         self.adjacency = self.create_adjacency()
         self.modified_adjacency = None
-        self.positions = self.get_positions(length)
+        self.positions = self.create_positions(length)
 
     def create_adjacency(self):
         """
@@ -34,7 +34,7 @@ class Constructor(object):
                     adjacency[i][j] = 1
         return adjacency
 
-    def get_positions(self, length):
+    def create_positions(self, length):
         """
         This method returns initial positions matrix.
         """
@@ -70,6 +70,7 @@ class Constructor(object):
         """
         This method deletes the street (i, j).
         """
+        # TODO: don't allow border to be deleted...
         if i in range(self.nodes) and j in range(self.nodes):
             if self.adjacency[i][j] != 0:
                 self.adjacency[i][j] = 0
@@ -104,7 +105,7 @@ class Constructor(object):
                     self.adjacency = np.delete(self.adjacency, to_delete, axis=1)
                     self.positions = np.delete(self.positions, to_delete, axis=0)
 
-                    self.nodes = self.nodes - len(to_delete)
+                    self.nodes = int(self.nodes - len(to_delete)/2)
             else:
                 raise ValueError("Junctions are not neighbours.")
         else:
@@ -154,6 +155,7 @@ class Constructor(object):
         """
         This method changes the street width of street (i, j).
         """
+        assert width>0
         if i in range(self.nodes) and j in range(self.nodes):
             if self.modified_adjacency[i][j] is not 0:
                 self.modified_adjacency[i][j]["width"] = width
@@ -167,6 +169,7 @@ class Constructor(object):
         """
         This method changes the absorption coefficient of street (i, j).
         """
+        assert alpha>=0 and alpha<=1
         if i in range(self.nodes) and j in range(self.nodes):
             if self.modified_adjacency[i][j] != 0:
                 self.modified_adjacency[i][j]["alpha"] = alpha

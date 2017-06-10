@@ -105,7 +105,7 @@ class Constructor(object):
                     self.adjacency = np.delete(self.adjacency, to_delete, axis=1)
                     self.positions = np.delete(self.positions, to_delete, axis=0)
 
-                    self.nodes = int(self.nodes - len(to_delete)/2)
+                    self.nodes = int(self.nodes - len(to_delete))
             else:
                 raise ValueError("Junctions are not neighbours.")
         else:

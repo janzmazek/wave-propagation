@@ -18,6 +18,7 @@ class Constructor(object):
         self.__adjacency = self.__create_adjacency()
         self.__modified_adjacency = None
         self.__positions = self.__create_positions(length)
+        self.__stage = 0
 
     def __create_adjacency(self):
         """
@@ -48,6 +49,7 @@ class Constructor(object):
         """
         This method moves the horizontal line i.
         """
+        assert self.__stage == 0
         if i in range(self.__horizontals):
             for node in range(self.__nodes):
                 if node//self.__horizontals == i:
@@ -59,6 +61,7 @@ class Constructor(object):
         """
         This method moves the vertical line j.
         """
+        assert self.__stage == 0
         if j in range(self.__verticals):
             for node in range(self.__nodes):
                 if node%self.__horizontals == j:
@@ -71,6 +74,9 @@ class Constructor(object):
         This method deletes the street (i, j).
         """
         # TODO: don't allow border to be deleted...
+        if self.__stage == 0:
+            self.__stage = 1 # set stage to 1 so lines cannot be moved
+        assert self.__stage == 1
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__adjacency[i][j] != 0:
                 self.__adjacency[i][j] = 0
@@ -116,6 +122,9 @@ class Constructor(object):
         This method creates new adjacency matrix with dictionaries of keys
         (alpha, street width, street length, orientation) instead of 1s.
         """
+        if self.__stage == 0 or self.__stage == 1:
+            self.__stage = 2
+        assert self.__stage == 2
         self.__modified_adjacency = self.__adjacency.tolist() # To python structure
         for i in range(self.__nodes):
             for j in range(i):
@@ -155,6 +164,7 @@ class Constructor(object):
         """
         This method changes the street width of street (i, j).
         """
+        assert self.__stage == 2
         assert width>0
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] is not 0:
@@ -169,6 +179,7 @@ class Constructor(object):
         """
         This method changes the absorption coefficient of street (i, j).
         """
+        assert self.__stage == 2
         assert alpha>=0 and alpha<=1
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] != 0:
@@ -183,7 +194,7 @@ class Constructor(object):
         """
         This getter method returns the normal adjacency matrix.
         """
-        return self.__adjacency        
+        return self.__adjacency
 
     def get_modified_adjacency(self):
         """

@@ -125,3 +125,19 @@ class TestConstructor(TestCase):
             network.change_alpha(0,2,0.5)
         with self.assertRaises(ValueError): # nodes out of range
             network.change_alpha(0,25,0.5)
+
+    def test_staging(self):
+        network = Constructor(5,5)
+        network.delete_connection(0,1)
+        with self.assertRaises(AssertionError): # no moving after deleting street
+            network.move_horizontal_line(0,10)
+        with self.assertRaises(AssertionError):
+            network.move_vertical_line(0,10)
+
+        network.modify_adjacency()
+        with self.assertRaises(AssertionError): # no moving after modifying
+            network.move_vertical_line(0,10)
+        with self.assertRaises(AssertionError):
+            network.move_horizontal_line(0,10)
+        with self.assertRaises(AssertionError): # no deleting after modifying
+            network.delete_connection(0,1)

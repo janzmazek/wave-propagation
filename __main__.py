@@ -5,6 +5,12 @@ from source.model import Model
 
 network = Constructor(5,5)
 
+network.move_vertical_line(2,25)
+network.move_vertical_line(3,50)
+network.move_horizontal_line(2,25)
+network.move_horizontal_line(3,50)
+
+
 network.delete_connection(5,6)
 network.delete_connection(5,6)
 network.delete_connection(5,6)

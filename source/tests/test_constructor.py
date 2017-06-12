@@ -1,5 +1,4 @@
 from unittest import TestCase
-import numpy as np
 from source.constructor import Constructor
 
 class TestConstructor(TestCase):

@@ -22,7 +22,7 @@ class Constructor(object):
 
     def __create_adjacency(self):
         """
-        This method returns initial adjacency matrix.
+        This private method returns initial adjacency matrix.
         """
         adjacency = np.zeros((self.__nodes, self.__nodes), dtype=np.int)
         # Normal adjacency matrix for grid network
@@ -37,7 +37,7 @@ class Constructor(object):
 
     def __create_positions(self, length):
         """
-        This method returns initial positions matrix.
+        This private method returns initial positions matrix.
         """
         positions = np.zeros((self.__nodes, 2))
         for i in range(self.__nodes):
@@ -165,7 +165,7 @@ class Constructor(object):
         This method changes the street width of street (i, j).
         """
         assert self.__stage == 2
-        assert width>0
+        assert width > 0
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] is not 0:
                 self.__modified_adjacency[i][j]["width"] = width
@@ -180,7 +180,7 @@ class Constructor(object):
         This method changes the absorption coefficient of street (i, j).
         """
         assert self.__stage == 2
-        assert alpha>=0 and alpha<=1
+        assert alpha >= 0 and alpha <= 1
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] != 0:
                 self.__modified_adjacency[i][j]["alpha"] = alpha

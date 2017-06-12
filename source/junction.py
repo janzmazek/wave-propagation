@@ -10,62 +10,79 @@ class Junction(object):
     propagation methods are performed.
     """
 
-    def __init__(self, widths):
-        self.__junction_type = 1
-        self.__left = None
-        self.__straight = None
-        self.__right = None
-        if "left" in widths:
-            self.__left = widths["left"]
-            self.__junction_type += 1
-        if "straight" in widths:
-            self.__straight = widths["straight"]
-            self.__junction_type += 1
-        if "right" in widths:
-            self.__right = widths["right"]
-            self.__junction_type += 1
-
-    def compute(self):
-        """
-        This is the main method which constructs and returns an appropriate
-        function based on the type of a junction and its street widths.
-        """
-        FC = lambda theta, entry, exiting: max(
-            1-exiting/entry*math.tan(theta), 0)
-        FT = lambda theta, entry, exiting: 0.5*min(
-            exiting/entry*math.tan(theta), 1)
-        if self.__junction_type == 2:
-            return self.__bend()
-        elif self.__junction_type == 3:
-            if self.__left is not None and self.__right is not None:
-                return self.__t_junction()
+    def __init__(self, widths, current):
+        junction_size = len(widths) - 1 # number of intersecting streets
+        if junction_size == 2:
+            self.__junction = "bend"
+        elif junction_size == 3:
+            if "left" in widths and "right" in widths:
+                self.__junction = "t-junction"
             else:
-                return self.__side_street()
-        elif self.__junction_type == 4:
-            return self.__simple_crossroads()
+                self.__junction = "side-street"
+        elif junction_size == 4:
+            self.__junction = "crossroads"
+        else:
+            raise ValueError("No such junction type.")
 
-    def __simple_crossroads(self):
-        """
-        This private method constructs function for a simple crossroads, where
-        simple means that opposite streets are of the same width.
-        """
-        return (lambda theta: theta,[0,1,2])
+        self.__validate(widths, current) # Check whether the junction is implemented
 
-    def __bend(self):
-        """
-        This private method constructs function for a right-angle bend.
-        """
-        return (lambda theta: theta,[0,1,2])
+        self.__next = widths["next"] # left, straight, right or entry
+        entry = widths["entry"] # width of entry street
+        exiting = widths[self.__next] # width of exiting street
+        self.__ratio = exiting/entry # ratio needed for future computations
 
-    def __t_junction(self):
-        """
-        This private method constructs function for a t-junction (TODO:opposite
-        streets same length?)
-        """
-        return (lambda theta: theta,[0,1,2])
+        self.__crossing = lambda theta, ratio: max(1-ratio*np.tan(theta), 0) # FC
+        self.__turning = lambda theta, ratio: 0.5*min(ratio*np.tan(theta), 1) # FT
 
-    def __side_street(self):
-        """
-        This private method constructs function for side-street junction.
-        """
-        return (lambda theta: theta,[0,1,2])
+    def compute_function(self):
+        if self.__junction == "bend":
+            if self.__next == "entry":
+                return lambda theta: self.__crossing(theta, self.__ratio)
+            else:
+                return lambda theta: 2*self.__turning(theta, self.__ratio)
+        elif self.__junction == "t-junction":
+            if self.__next == "entry":
+                return lambda theta: self.__crossing(theta, 2*self.__ratio)
+            else:
+                return lambda theta: self.__turning(theta, 2*self.__ratio)
+        elif self.__junction == "side-street":
+            if self.__next == "straight":
+                return lambda theta: self.__crossing(theta, 0.5*self.__ratio)
+            elif self.__next == "entry":
+                return lambda theta: 0
+            else:
+                return lambda theta: 2*self.__turning(theta, 0.5*self.__ratio)
+        elif self.__junction == "crossroads":
+            if self.__next == "straight":
+                return lambda theta: self.__crossing(theta, self.__ratio)
+            elif self.__next == "entry":
+                return lambda theta: 0
+            else:
+                return lambda theta: self.__turning(theta, self.__ratio)
+
+    def compute_breaking_point(self):
+        if self.__junction == "bend":
+            return 1
+        elif self.__junction == "t-junction":
+            return 2
+        elif self.__junction == "side-street":
+            return 3
+        elif self.__junction == "crossroads":
+            return 4
+
+    def __validate(self, widths, current):
+        if self.__junction == "bend":
+            pass
+        elif self.__junction == "t-junction":
+            if not widths["left"] == widths["right"]:
+                raise ValueError("This junction is not (yet) implemented! \
+Opposite streets must be same width. Modify junction {0}".format(current))
+                print("Problematic junction is {0}".format(self.__junction))
+        elif self.__junction == "side-street":
+            if not widths["entry"] == widths["straight"]:
+                raise ValueError("This junction is not (yet) implemented! \
+Opposite streets must be same width. Modify junction {0}".format(current))
+        elif self.__junction == "crossroads":
+            if not widths["entry"] == widths["straight"] and not widths["left"] == widths["right"]:
+                raise ValueError("This junction is not (yet) implemented! \
+Opposite streets must be same width. Modify junction {0}".format(current))

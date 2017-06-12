@@ -2,9 +2,9 @@
 This module performs probabilistic model on some network of streets given by the
 modified adjacency matrix (with dictionary of length, width, alpha, orientation).
 """
+from collections import defaultdict
 import numpy as np
 import networkx as nx
-from collections import defaultdict
 
 from source.junction import Junction
 
@@ -22,11 +22,11 @@ class Model(object):
         This method returns normal adjacency matrix from modified adjacency
         matrix.
         """
-        adjacency = np.zeros((self.__nodes,self.__nodes))
+        adjacency = np.zeros((self.__nodes, self.__nodes))
         for i in range(self.__nodes):
             for j in range(self.__nodes):
-                if self.__modified_adjacency[i][j]!=0:
-                    adjacency[i][j]=1
+                if self.__modified_adjacency[i][j] != 0:
+                    adjacency[i][j] = 1
         return adjacency
 
     def set_source(self, source):
@@ -49,31 +49,48 @@ class Model(object):
         propagation problem. Treshold specifies length additional to the shortest
         path length.
         """
-        all_paths = self.__connections(treshold) # obtain all connecting paths
+        assert self.__source is not None and self.__receiver is not None
+        all_paths = self.__compute_paths(treshold) # obtain all connecting paths
         power = 0
         for length, paths in all_paths.items(): # iterate through defaultdict
             for path in paths:
                 integrand = self.__walk(length, path) # obtain functions and breaking points
                 power += self.__integrate(integrand) # sum up all path contributions
-                print(path)
                 print(integrand)
-        print(power)
+                print(len(integrand["path"]))
+                print(len(integrand["functions"]))
+                print(len(integrand["breaks"]))
+                print(len(integrand["lengths"]))
+                print(len(integrand["alphas"]))
         return power # resulting power flow
 
-    def __connections(self, treshold):
+    def __compute_paths(self, treshold):
         """
         This private method computes paths between source and receiver and sorts
         them by the length (in a dictionary).
         """
+        # TODO not only simple paths! Include cycles
         shortest_length = nx.shortest_path_length(
-        self.__graph, self.__source, self.__receiver)
+            self.__graph, self.__source, self.__receiver)
         paths = defaultdict(list)
         cutoff = shortest_length + treshold
         all_simple_paths = nx.all_simple_paths(
-        self.__graph, self.__source, self.__receiver, cutoff) # compute all paths
+            self.__graph, self.__source, self.__receiver, cutoff) # compute all simple paths
+        all_paths = self.__find_paths(cutoff) # compute all paths
         for path in all_simple_paths:
             paths[len(path)].append(path) # sort paths by the length
         return paths
+
+    def __find_paths(self, cutoff):
+        pass
+        # if n==0:
+        #     return [[u]]
+        # paths = []
+        # for neighbor in self.__graph.neighbors(u):
+        #     for path in self.__find_paths(self.__graph, neighbor, n-1):
+        #         if u not in path:
+        #             paths.append([u]+path)
+        # return paths
 
     def __walk(self, length, path):
         """
@@ -81,10 +98,12 @@ class Model(object):
         and breaking_points arrays at each step.
         """
         functions = []
-        breaking_points = []
-        if length > 1:
-            lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]] # Fill length of first street
-            alphas = [self.__modified_adjacency[path[0]][path[1]]["alpha"]] # Fill alpha of first street
+        breaking_points = set()
+        if length > 2:
+            # Fill length of first street
+            lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]]
+            # Fill alpha of first street
+            alphas = [self.__modified_adjacency[path[0]][path[1]]["alpha"]]
 
             for i in range(1, length-1):
                 previous = path[i-1]
@@ -92,18 +111,21 @@ class Model(object):
                 following = path[i+1]
 
                 widths = self.__rotate(previous, current, following)
-                junction = Junction(widths)
-                (function, breaking_point) = junction.compute()
-                functions.append(function)
-                breaking_points.append(breaking_point)
-                
+                junction = Junction(widths, current)
+                functions.append(junction.compute_function())
+                breaking_points.add(junction.compute_breaking_point())
+
+                # add length and alpha
                 lengths.append(self.__modified_adjacency[previous][current]["length"])
                 alphas.append(self.__modified_adjacency[previous][current]["alpha"])
 
-            lengths.append(self.__modified_adjacency[path[length-2]][path[length-1]]["length"]) # Fill length of last street
-            alphas.append(self.__modified_adjacency[path[length-2]][path[length-1]]["alpha"]) # Fill alpha of last street
+            # Fill length of last street
+            lengths.append(self.__modified_adjacency[path[length-2]][path[length-1]]["length"])
+            # Fill alpha of last street
+            alphas.append(self.__modified_adjacency[path[length-2]][path[length-1]]["alpha"])
 
             return {
+                "path": path,
                 "functions": functions,
                 "breaks": breaking_points,
                 "lengths": lengths,

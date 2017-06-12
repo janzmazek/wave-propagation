@@ -1,5 +1,6 @@
 from source.constructor import Constructor
 from source.model import Model
+import yaml
 #import matplotlib.pyplot as plt
 #import networkx as nx
 
@@ -29,6 +30,12 @@ network.change_width(7,8,90)
 network.change_width(2,5,90)
 network.change_width(4,8,60)
 network.change_width(7,12,30)
+network.change_width(5,6,60)
+network.change_width(8,9,90)
+network.change_width(9,10,90)
+network.change_width(5,9,90)
+network.change_width(9,14,90)
+network.change_width(8,13,60)
 
 network.change_alpha(5,9,0.8)
 network.change_alpha(8,9,0.8)

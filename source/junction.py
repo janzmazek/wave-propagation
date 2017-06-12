@@ -11,7 +11,7 @@ class Junction(object):
     """
 
     def __init__(self, widths, current):
-        junction_size = len(widths) - 1 # number of intersecting streets
+        junction_size = len(widths) - 2 # number of intersecting streets
         if junction_size == 2:
             self.__junction = "bend"
         elif junction_size == 3:
@@ -26,7 +26,7 @@ class Junction(object):
 
         self.__validate(widths, current) # Check whether the junction is implemented
 
-        self.__next = widths["next"] # left, straight, right or entry
+        self.__next = widths["next"] # left, forward, right or entry
         entry = widths["entry"] # width of entry street
         exiting = widths[self.__next] # width of exiting street
         self.__ratio = exiting/entry # ratio needed for future computations
@@ -36,26 +36,26 @@ class Junction(object):
 
     def compute_function(self):
         if self.__junction == "bend":
-            if self.__next == "entry":
+            if self.__next == "backward":
                 return lambda theta: self.__crossing(theta, self.__ratio)
             else:
                 return lambda theta: 2*self.__turning(theta, self.__ratio)
         elif self.__junction == "t-junction":
-            if self.__next == "entry":
+            if self.__next == "backward":
                 return lambda theta: self.__crossing(theta, 2*self.__ratio)
             else:
                 return lambda theta: self.__turning(theta, 2*self.__ratio)
         elif self.__junction == "side-street":
-            if self.__next == "straight":
+            if self.__next == "forward":
                 return lambda theta: self.__crossing(theta, 0.5*self.__ratio)
-            elif self.__next == "entry":
+            elif self.__next == "backward":
                 return lambda theta: 0
             else:
                 return lambda theta: 2*self.__turning(theta, 0.5*self.__ratio)
         elif self.__junction == "crossroads":
-            if self.__next == "straight":
+            if self.__next == "forward":
                 return lambda theta: self.__crossing(theta, self.__ratio)
-            elif self.__next == "entry":
+            elif self.__next == "backward":
                 return lambda theta: 0
             else:
                 return lambda theta: self.__turning(theta, self.__ratio)
@@ -79,10 +79,10 @@ class Junction(object):
 Opposite streets must be same width. Modify junction {0}".format(current))
                 print("Problematic junction is {0}".format(self.__junction))
         elif self.__junction == "side-street":
-            if not widths["entry"] == widths["straight"]:
+            if not widths["backward"] == widths["forward"]:
                 raise ValueError("This junction is not (yet) implemented! \
 Opposite streets must be same width. Modify junction {0}".format(current))
         elif self.__junction == "crossroads":
-            if not widths["entry"] == widths["straight"] and not widths["left"] == widths["right"]:
+            if not widths["backward"] == widths["forward"] and not widths["left"] == widths["right"]:
                 raise ValueError("This junction is not (yet) implemented! \
 Opposite streets must be same width. Modify junction {0}".format(current))

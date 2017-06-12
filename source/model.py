@@ -56,12 +56,6 @@ class Model(object):
             for path in paths:
                 integrand = self.__walk(length, path) # obtain functions and breaking points
                 power += self.__integrate(integrand) # sum up all path contributions
-                print(integrand)
-                print(len(integrand["path"]))
-                print(len(integrand["functions"]))
-                print(len(integrand["breaks"]))
-                print(len(integrand["lengths"]))
-                print(len(integrand["alphas"]))
         return power # resulting power flow
 
     def __compute_paths(self, treshold):
@@ -69,28 +63,35 @@ class Model(object):
         This private method computes paths between source and receiver and sorts
         them by the length (in a dictionary).
         """
-        # TODO not only simple paths! Include cycles
         shortest_length = nx.shortest_path_length(
             self.__graph, self.__source, self.__receiver)
         paths = defaultdict(list)
         cutoff = shortest_length + treshold
-        all_simple_paths = nx.all_simple_paths(
-            self.__graph, self.__source, self.__receiver, cutoff) # compute all simple paths
-        all_paths = self.__find_paths(cutoff) # compute all paths
-        for path in all_simple_paths:
-            paths[len(path)].append(path) # sort paths by the length
+        # all_simple_paths = nx.all_simple_paths(
+        #    self.__graph, self.__source, self.__receiver, cutoff)
+        distances_dictionary = nx.all_pairs_dijkstra_path_length(
+            self.__graph)[self.__receiver]
+        all_paths = self.__find_paths(
+            distances_dictionary, self.__source, cutoff+1)
+
+        for path in all_paths:
+            paths[len(path)].append(path) # sort paths by the length (defaultdict)
         return paths
 
-    def __find_paths(self, cutoff):
-        pass
-        # if n==0:
-        #     return [[u]]
-        # paths = []
-        # for neighbor in self.__graph.neighbors(u):
-        #     for path in self.__find_paths(self.__graph, neighbor, n-1):
-        #         if u not in path:
-        #             paths.append([u]+path)
-        # return paths
+
+    def __find_paths(self, distances_dictionary, element, n):
+        """
+        This private method implements an algorithm for finding all paths
+        between source and receiver of specified length.
+        """
+        if element==self.__receiver or n<=0:
+            return [[element]]
+        paths = []
+        for neighbor in self.__graph.neighbors(element):
+            for path in self.__find_paths(distances_dictionary, neighbor, n-1):
+                if distances_dictionary[element] < n:
+                    paths.append([element]+path)
+        return paths
 
     def __walk(self, length, path):
         """
@@ -138,25 +139,28 @@ class Model(object):
         This private method figures out an orientation of the junction
         """
         orientation = self.__modified_adjacency[current][previous]["orientation"]
+        backward = orientation
         right = (orientation+1)%4
-        straight = (orientation+2)%4
+        forward = (orientation+2)%4
         left = (orientation+3)%4
         rotated = {"entry": self.__modified_adjacency[current][previous]["width"]}
-        for neighbour in self.__graph[current]:
-            if self.__modified_adjacency[current][neighbour]["orientation"] == left:
-                rotated["left"] = self.__modified_adjacency[current][neighbour]["width"]
-                if following == neighbour:
+        for neighbor in self.__graph.neighbors(current):
+            if self.__modified_adjacency[current][neighbor]["orientation"] == left:
+                rotated["left"] = self.__modified_adjacency[current][neighbor]["width"]
+                if following == neighbor:
                     rotated["next"] = "left"
-        for neighbour in self.__graph[current]:
-            if self.__modified_adjacency[current][neighbour]["orientation"] == straight:
-                rotated["straight"] = self.__modified_adjacency[current][neighbour]["width"]
-                if following == neighbour:
-                    rotated["next"] = "straight"
-        for neighbour in self.__graph[current]:
-            if self.__modified_adjacency[current][neighbour]["orientation"] == right:
-                rotated["right"] = self.__modified_adjacency[current][neighbour]["width"]
-                if following == neighbour:
+            elif self.__modified_adjacency[current][neighbor]["orientation"] == forward:
+                rotated["forward"] = self.__modified_adjacency[current][neighbor]["width"]
+                if following == neighbor:
+                    rotated["next"] = "forward"
+            elif self.__modified_adjacency[current][neighbor]["orientation"] == right:
+                rotated["right"] = self.__modified_adjacency[current][neighbor]["width"]
+                if following == neighbor:
                     rotated["next"] = "right"
+            elif self.__modified_adjacency[current][neighbor]["orientation"] == backward:
+                rotated["backward"] = self.__modified_adjacency[current][neighbor]["width"]
+                if following == neighbor:
+                    rotated["next"] = "backward"
         return rotated
 
     def __integrate(self, integrand):

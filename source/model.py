@@ -4,6 +4,7 @@ modified adjacency matrix (with dictionary of length, width, alpha, orientation)
 """
 from collections import defaultdict
 import numpy as np
+import scipy.integrate as integrate
 import networkx as nx
 
 from source.junction import Junction
@@ -56,6 +57,8 @@ class Model(object):
             for path in paths:
                 integrand = self.__walk(length, path) # obtain functions and breaking points
                 power += self.__integrate(integrand) # sum up all path contributions
+        print("Resulting power from node {0} to node {1} is {2}".format(
+            self.__source, self.__receiver, power))
         return power # resulting power flow
 
     def __compute_paths(self, treshold):
@@ -136,7 +139,8 @@ class Model(object):
 
     def __rotate(self, previous, current, following):
         """
-        This private method figures out an orientation of the junction
+        This private method figures out an orientation of the junction and
+        provides information on street widths and exiting street.
         """
         orientation = self.__modified_adjacency[current][previous]["orientation"]
         backward = orientation
@@ -168,5 +172,19 @@ class Model(object):
         This private method integrates functions with respect to the breaking
         points.
         """
-        # TODO: implement integrator
-        return 1
+        path = integrand["path"]
+        functions = integrand["functions"]
+        breaking_points = integrand["breaks"]
+        lengths = integrand["lengths"]
+        alphas = integrand["alphas"]
+
+        def compose_function(theta):
+            complete = 1/np.pi * (1-alphas[0])**(lengths[0]*np.tan(theta))
+            for i in range(1, len(path)-1):
+                complete = complete * (1-alphas[i])**(lengths[i]*np.tan(theta))*functions[i-1](theta)
+            complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(theta))
+            return complete
+
+        (integral, err) = integrate.quad(compose_function, 0, np.pi/2)
+        print("Contribution from path {0}: {1} (+- {2})".format(path, integral, err))
+        return integral

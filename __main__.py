@@ -22,7 +22,7 @@ network.delete_connection(3,5)
 network.delete_connection(2,6)
 network.delete_connection(1,8)
 
-network.modify_adjacency()
+network.modify_adjacency(alpha=0)
 
 network.change_width(2,3,30)
 network.change_width(4,5,60)

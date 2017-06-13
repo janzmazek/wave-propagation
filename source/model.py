@@ -56,7 +56,6 @@ class Model(object):
         error = 0
         for length, paths in all_paths.items(): # iterate through defaultdict
             for path in paths:
-                print(path)
                 integrand = self.__walk(length, path) # obtain functions and breaking points
                 (p,e) = self.__integrate(integrand)
                 power += p
@@ -126,13 +125,8 @@ class Model(object):
                 breaking_points.add(junction.compute_breaking_point())
 
                 # add length and alpha
-                lengths.append(self.__modified_adjacency[previous][current]["length"])
-                alphas.append(self.__modified_adjacency[previous][current]["alpha"])
-
-            # Fill length of last street
-            lengths.append(self.__modified_adjacency[path[length-2]][path[length-1]]["length"])
-            # Fill alpha of last street
-            alphas.append(self.__modified_adjacency[path[length-2]][path[length-1]]["alpha"])
+                lengths.append(self.__modified_adjacency[current][following]["length"])
+                alphas.append(self.__modified_adjacency[current][following]["alpha"])
 
             return {
                 "path": path,

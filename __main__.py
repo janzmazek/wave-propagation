@@ -1,8 +1,6 @@
 from source.constructor import Constructor
 from source.model import Model
 import yaml
-#import matplotlib.pyplot as plt
-#import networkx as nx
 
 network = Constructor(5,5)
 
@@ -37,8 +35,8 @@ network.change_width(5,9,90)
 network.change_width(9,14,90)
 network.change_width(8,13,60)
 
-network.change_alpha(5,9,0.8)
-network.change_alpha(8,9,0.8)
+#network.change_alpha(5,9,0.8)
+#network.change_alpha(8,9,0.8)
 network.change_alpha(5,6,0.2)
 network.change_alpha(8,13,0.2)
 
@@ -46,6 +44,6 @@ network.output_network()
 
 modified_adjacency = network.get_modified_adjacency()
 model = Model(modified_adjacency)
-model.set_source(0)
-model.set_receiver(1)
-model.solve(0)
+model.set_source(8, 10)
+model.set_receiver(10, 20)
+model.solve(2)

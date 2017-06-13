@@ -6,5 +6,5 @@ setup(
     packages = find_packages(exclude=['*test']),
     #scripts = ['scripts/greengraph'],
     install_requires = ['tkinter', 'argparse', 'numpy','scipy', 'matplotlib',
-        'networkx, yaml']
+        'networkx, yaml', 'threading']
 )

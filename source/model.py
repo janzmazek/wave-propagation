@@ -2,7 +2,7 @@
 This module performs probabilistic model on some network of streets given by the
 modified adjacency matrix (with dictionary of length, width, alpha, orientation).
 """
-from collections import defaultdict
+#from collections import defaultdict
 import numpy as np
 import scipy.integrate as integrate
 import networkx as nx
@@ -16,7 +16,9 @@ class Model(object):
         self.__nodes = len(modified_adjacency)
         self.__graph = nx.from_numpy_matrix(self.__create_adjacency())
         self.__source = None
+        self.__distance_from_source = None
         self.__receiver = None
+        self.__distance_from_receiver = None
 
     def __create_adjacency(self):
         """
@@ -30,19 +32,21 @@ class Model(object):
                     adjacency[i][j] = 1
         return adjacency
 
-    def set_source(self, source):
+    def set_source(self, source, distance_from_source):
         """
         This setter method sets source node.
         TODO: input coordinates, find closest node, set node
         """
         self.__source = source
+        self.__distance_from_source = distance_from_source
 
-    def set_receiver(self, receiver):
+    def set_receiver(self, receiver, distance_from_receiver):
         """
         This setter method sets receiver node.
         TODO: input coordinates, find closest node, set node
         """
         self.__receiver = receiver
+        self.__distance_from_receiver = distance_from_receiver
 
     def solve(self, treshold):
         """
@@ -51,15 +55,14 @@ class Model(object):
         path length.
         """
         assert self.__source is not None and self.__receiver is not None
-        all_paths = self.__compute_paths(treshold) # obtain all connecting paths
+        paths = self.__compute_paths(treshold) # obtain all connecting paths
         power = 0
         error = 0
-        for length, paths in all_paths.items(): # iterate through defaultdict
-            for path in paths:
-                integrand = self.__walk(length, path) # obtain functions and breaking points
-                (p,e) = self.__integrate(integrand)
-                power += p
-                error += e
+        for path in paths:
+            integrand = self.__walk(path) # obtain functions and breaking points
+            (part_power, part_error) = self.__integrate(integrand)
+            power += part_power
+            error += part_error
         print("==========================================")
         print("Resulting power from node {0} to node {1} is {2} (error {3})".format(
             self.__source, self.__receiver, power, error))
@@ -67,22 +70,14 @@ class Model(object):
 
     def __compute_paths(self, treshold):
         """
-        This private method computes paths between source and receiver and sorts
-        them by the length (in a dictionary).
+        This private method computes all paths between source and receiver.
         """
         shortest_length = nx.shortest_path_length(
             self.__graph, self.__source, self.__receiver)
-        paths = defaultdict(list)
         cutoff = shortest_length + treshold
-        # all_simple_paths = nx.all_simple_paths(
-        #    self.__graph, self.__source, self.__receiver, cutoff)
         distances_dictionary = nx.all_pairs_dijkstra_path_length(
             self.__graph)[self.__receiver]
-        all_paths = self.__find_paths(
-            distances_dictionary, self.__source, cutoff+1)
-
-        for path in all_paths:
-            paths[len(path)].append(path) # sort paths by the length (defaultdict)
+        paths = self.__find_paths(distances_dictionary, self.__source, cutoff+1)
         return paths
 
 
@@ -92,22 +87,23 @@ class Model(object):
         between source and receiver of specified length.
         """
         paths = []
-        if n>0:
+        if n > 0:
             for neighbor in self.__graph.neighbors(element):
                 for path in self.__find_paths(distances_dictionary, neighbor, n-1):
                     if distances_dictionary[element] < n:
                         paths.append([element]+path)
-        if element==self.__receiver:
+        if element == self.__receiver:
             paths.append([element])
         return paths
 
-    def __walk(self, length, path):
+    def __walk(self, path):
         """
         This private method iterates through the path and fills the functions
         and breaking_points arrays at each step.
         """
         functions = []
         breaking_points = set()
+        length = len(path)
         if length > 1:
             # Fill length of first street
             lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]]
@@ -127,6 +123,10 @@ class Model(object):
                 # add length and alpha
                 lengths.append(self.__modified_adjacency[current][following]["length"])
                 alphas.append(self.__modified_adjacency[current][following]["alpha"])
+
+            # Subtract distance from source/receiver
+            lengths[0] -= self.__distance_from_source
+            lengths[-1] -= self.__distance_from_receiver
 
             return {
                 "path": path,
@@ -181,7 +181,8 @@ class Model(object):
         def compose_function(theta):
             complete = 1/np.pi * (1-alphas[0])**(lengths[0]*np.tan(theta))
             for i in range(1, len(path)-1):
-                complete = complete * (1-alphas[i])**(lengths[i]*np.tan(theta))*functions[i-1](theta)
+                complete = complete * (1-alphas[i])**(lengths[i]*np.tan(theta)) \
+                    *functions[i-1](theta)
             complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(theta))
             return complete
 

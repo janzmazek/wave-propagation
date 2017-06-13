@@ -53,12 +53,17 @@ class Model(object):
         assert self.__source is not None and self.__receiver is not None
         all_paths = self.__compute_paths(treshold) # obtain all connecting paths
         power = 0
+        error = 0
         for length, paths in all_paths.items(): # iterate through defaultdict
             for path in paths:
+                print(path)
                 integrand = self.__walk(length, path) # obtain functions and breaking points
-                power += self.__integrate(integrand) # sum up all path contributions
-        print("Resulting power from node {0} to node {1} is {2}".format(
-            self.__source, self.__receiver, power))
+                (p,e) = self.__integrate(integrand)
+                power += p
+                error += e
+        print("==========================================")
+        print("Resulting power from node {0} to node {1} is {2} (error {3})".format(
+            self.__source, self.__receiver, power, error))
         return power # resulting power flow
 
     def __compute_paths(self, treshold):
@@ -87,13 +92,14 @@ class Model(object):
         This private method implements an algorithm for finding all paths
         between source and receiver of specified length.
         """
-        if element==self.__receiver or n<=0:
-            return [[element]]
         paths = []
-        for neighbor in self.__graph.neighbors(element):
-            for path in self.__find_paths(distances_dictionary, neighbor, n-1):
-                if distances_dictionary[element] < n:
-                    paths.append([element]+path)
+        if n>0:
+            for neighbor in self.__graph.neighbors(element):
+                for path in self.__find_paths(distances_dictionary, neighbor, n-1):
+                    if distances_dictionary[element] < n:
+                        paths.append([element]+path)
+        if element==self.__receiver:
+            paths.append([element])
         return paths
 
     def __walk(self, length, path):
@@ -103,7 +109,7 @@ class Model(object):
         """
         functions = []
         breaking_points = set()
-        if length > 2:
+        if length > 1:
             # Fill length of first street
             lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]]
             # Fill alpha of first street
@@ -185,6 +191,6 @@ class Model(object):
             complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(theta))
             return complete
 
-        (integral, err) = integrate.quad(compose_function, 0, np.pi/2)
-        print("Contribution from path {0}: {1} (+- {2})".format(path, integral, err))
-        return integral
+        (integral, error) = integrate.quad(compose_function, 0, np.pi/2)
+        print("Contribution from path {0}: {1} (error {2})".format(path, integral, error))
+        return (integral, error)

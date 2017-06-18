@@ -41,8 +41,8 @@ class Constructor(object):
         """
         positions = np.zeros((self.__nodes, 2))
         for i in range(self.__nodes):
-            positions[i][0] = i%self.__horizontals*length
-            positions[i][1] = i//self.__horizontals*length
+            positions[i][0] = i%self.__verticals*length
+            positions[i][1] = i//self.__verticals*length
         return positions
 
     def move_horizontal_line(self, i, length):
@@ -52,7 +52,7 @@ class Constructor(object):
         assert self.__stage == 0
         if i in range(self.__horizontals):
             for node in range(self.__nodes):
-                if node//self.__horizontals == i:
+                if node//self.__verticals == i:
                     self.__positions[node][1] += length
         else:
             raise ValueError("No such horizontal line.")
@@ -64,7 +64,7 @@ class Constructor(object):
         assert self.__stage == 0
         if j in range(self.__verticals):
             for node in range(self.__nodes):
-                if node%self.__horizontals == j:
+                if node%self.__verticals == j:
                     self.__positions[node][0] += length
         else:
             raise ValueError("No such vertical line.")
@@ -190,6 +190,12 @@ class Constructor(object):
         else:
             raise ValueError("Nodes out of range.")
 
+    def get_horizontals(self):
+        return self.__horizontals
+
+    def get_verticals(self):
+        return self.__verticals
+
     def get_adjacency(self):
         """
         This getter method returns the normal adjacency matrix.
@@ -212,6 +218,7 @@ class Constructor(object):
         """
         This method outputs file "output.html" with svg drawing of network.
         """
+        assert self.__stage == 2
         with open("output.html", "w") as file:
             file.write("<html><head><title>Network representation</title></head><body>")
             file.write("<svg width='{0}' height='{1}'>\n".format(

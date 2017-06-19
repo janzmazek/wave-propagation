@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import messagebox
 from source.model import Model
+from source.networkCanvas import NetworkCanvas
 
 DEFAULT_LENGTH = 100
 DEFAULT_WIDTH = 10
@@ -15,7 +16,9 @@ class EditingTools(object):
 
 class MovingTools(EditingTools):
     """docstring for MovingTools."""
-    def __init__(self, network_canvas, tools_frame):
+    def __init__(self, canvas, tools_frame, horizontals, verticals):
+        network_canvas = NetworkCanvas(canvas, horizontals, verticals)
+        network_canvas.draw_network()
         super(MovingTools, self).__init__(network_canvas, tools_frame)
         self.moving_tools = Frame(self.tools_frame)
         self.moving_tools.pack()

@@ -1,12 +1,13 @@
 from tkinter import *
+from source.constructor import Constructor
 
 OFFSET = 20
 
 class NetworkCanvas(object):
     """docstring for Canvas."""
-    def __init__(self, canvas, constructor):
+    def __init__(self, canvas, horizontals, verticals):
         self.canvas = canvas
-        self.constructor = constructor
+        self.constructor = Constructor(horizontals, verticals)
 
         self.modified = False
 
@@ -198,3 +199,6 @@ class NetworkCanvas(object):
         else:
             self.selected = self.find_nodes(canvas)
             self.canvas.itemconfig(line, fill="green")
+
+    def get_modified_adjacency(self):
+        return self.constructor.get_modified_adjacency()

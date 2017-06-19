@@ -1,7 +1,6 @@
 from tkinter import *
 from source.editingTools import *
-from source.networkCanvas import NetworkCanvas
-from source.constructor import Constructor
+#from source.networkCanvas import NetworkCanvas
 
 # Global constants
 
@@ -105,7 +104,6 @@ class Gui(object):
                                       pady=10
                                       )
         self.tools_frame.pack(fill=BOTH, expand=1)
-        constructor = Constructor(horizontals, verticals, initial_length)
-        network_canvas = NetworkCanvas(self.canvas, constructor)
-        editing_tools = MovingTools(network_canvas, self.tools_frame)
-        network_canvas.draw_network()
+        #network_canvas = NetworkCanvas(self.canvas, horizontals, verticals)
+        editing_tools = MovingTools(self.canvas, self.tools_frame, horizontals, verticals)
+        #network_canvas.draw_network()

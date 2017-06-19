@@ -32,7 +32,7 @@ class Model(object):
                     adjacency[i][j] = 1
         return adjacency
 
-    def set_source(self, source, distance_from_source):
+    def set_source(self, source, distance_from_source=0):
         """
         This setter method sets source node.
         TODO: input coordinates, find closest node, set node
@@ -40,7 +40,7 @@ class Model(object):
         self.__source = source
         self.__distance_from_source = distance_from_source
 
-    def set_receiver(self, receiver, distance_from_receiver):
+    def set_receiver(self, receiver, distance_from_receiver=0):
         """
         This setter method sets receiver node.
         TODO: input coordinates, find closest node, set node

@@ -1,6 +1,5 @@
 from tkinter import *
 from source.editingTools import *
-#from source.networkCanvas import NetworkCanvas
 
 # Global constants
 
@@ -9,13 +8,14 @@ HEIGHT = 500
 
 
 class Gui(object):
+    """
+    This class of methods is a graphic user interface for wave propagation
+    algorithm.
+    """
     def __init__(self):
         # Initial state
         self.master = Tk()
         self.master.title("Wave propagation")
-        #self.label_message = Label(self.master,
-        #                           text="Welcome to wave propagation in urban areas simulator.")
-        #self.label_message.pack(fill=BOTH, expand=1)
 
         # Main widgets
         self.left_frame = False
@@ -24,28 +24,39 @@ class Gui(object):
         self.editing_tools = False
         self.canvas = False
 
-        # Initial state
-        self.add_left_frame()
-        self.add_right_frame()
-        self.add_starting_frame()
-        self.master.resizable(0,0)
-        self.master.mainloop()
-
         # Entry widgets
         self.horizontals_entry = False
         self.verticals_entry = False
         self.initial_length_entry = False
 
+        # Initial state
+        self.add_left_frame()
+        self.add_right_frame()
+        self.add_starting_frame()
+        self.master.resizable(0,0)
+        self.master.iconbitmap('py.ico')
+        self.master.mainloop()
 
     def add_left_frame(self):
+        """
+        This method creates 'left frame', container of 'starting frame' and
+        'tools frame'.
+        """
         self.left_frame = Frame()
         self.left_frame.grid(row=0, column=0, sticky="n", padx=10, pady=10)
 
     def add_right_frame(self):
+        """
+        This method creates 'right frame', container of drawing canvas.
+        """
         self.right_frame = Frame()
         self.right_frame.grid(row=0, column=1, sticky="n")
 
     def add_starting_frame(self):
+        """
+        This method creates 'starting frame' for constructing initial network
+        grid.
+        """
         self.starting_frame = LabelFrame(self.left_frame,
                                          text="Create new network",
                                          bd=2,
@@ -104,6 +115,4 @@ class Gui(object):
                                       pady=10
                                       )
         self.tools_frame.pack(fill=BOTH, expand=1)
-        #network_canvas = NetworkCanvas(self.canvas, horizontals, verticals)
-        editing_tools = MovingTools(self.canvas, self.tools_frame, horizontals, verticals)
-        #network_canvas.draw_network()
+        editing_tools = MovingTools(self.canvas, self.tools_frame, horizontals, verticals, initial_length)

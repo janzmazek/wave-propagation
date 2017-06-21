@@ -5,14 +5,14 @@ OFFSET = 20
 
 class NetworkCanvas(object):
     """docstring for Canvas."""
-    def __init__(self, canvas, horizontals, verticals):
+    def __init__(self, canvas, horizontals, verticals, initial_length):
         self.canvas = canvas
-        self.constructor = Constructor(horizontals, verticals)
+        self.constructor = Constructor(horizontals, verticals, initial_length)
 
         self.modified = False
 
         self.movement = None
-        self.selected = None
+        self.selected = False
 
     def add_moving_bind(self):
         funcid1 = self.canvas.bind("<Button-1>", self.click_to_move)
@@ -71,6 +71,15 @@ class NetworkCanvas(object):
                                             fill=fill,
                                             width=width
                                             )
+        if self.selected:
+            index1 = self.selected[0]
+            index2 = self.selected[1]
+            x0 = positions[index1][0]
+            y0 = positions[index1][1]
+            x1 = positions[index2][0]
+            y1 = positions[index2][1]
+            self.canvas.create_line(x0+OFFSET, y0+OFFSET, x1+OFFSET, y1+OFFSET, fill="green", width=10)
+
     def clear_network(self):
         self.canvas.delete("all")
 
@@ -190,15 +199,14 @@ class NetworkCanvas(object):
             self.refresh_network()
 
     def click_to_select(self, event):
-        # TODO: Fix selecting only one street!
         canvas = event.widget
         line = canvas.find_withtag("current")
         if not line:
+            self.selected = False
             print("You misclicked!")
-            self.selected = None
         else:
             self.selected = self.find_nodes(canvas)
-            self.canvas.itemconfig(line, fill="green")
+        self.refresh_network()
 
     def get_modified_adjacency(self):
         return self.constructor.get_modified_adjacency()

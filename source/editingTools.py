@@ -8,16 +8,16 @@ DEFAULT_WIDTH = 10
 DEFAULT_ALPHA = 0.5
 
 class EditingTools(object):
-    """docstring for EditingTools."""
+    """This class of methods constructs tools widget for GUI."""
     def __init__(self, network_canvas, tools_frame):
         self.network_canvas = network_canvas
         self.tools_frame = tools_frame
 
 
 class MovingTools(EditingTools):
-    """docstring for MovingTools."""
-    def __init__(self, canvas, tools_frame, horizontals, verticals):
-        network_canvas = NetworkCanvas(canvas, horizontals, verticals)
+    """This child class implements moving tools."""
+    def __init__(self, canvas, tools_frame, horizontals, verticals, initial_length):
+        network_canvas = NetworkCanvas(canvas, horizontals, verticals, initial_length)
         network_canvas.draw_network()
         super(MovingTools, self).__init__(network_canvas, tools_frame)
         self.moving_tools = Frame(self.tools_frame)
@@ -35,16 +35,22 @@ class MovingTools(EditingTools):
         (self.funcid1, self.funcid2) = self.network_canvas.add_moving_bind()
 
     def delete(self):
+        """
+        This method destroys moving tools when executed.
+        """
         self.moving_tools.destroy()
-        self.moving_tools = None
 
     def click(self):
+        """
+        This method is executed on button click and creates tools frame
+        following current tools frame.
+        """
         self.delete()
         self.network_canvas.remove_moving_bind(self.funcid1, self.funcid2)
         DeletingTools(self.network_canvas, self.tools_frame)
 
 class DeletingTools(EditingTools):
-    """docstring for DeletingTools."""
+    """This child class implements deleting tools."""
     def __init__(self, network_canvas, tools_frame):
         super(DeletingTools, self).__init__(network_canvas, tools_frame)
         self.deleting_tools = Frame(self.tools_frame)
@@ -61,15 +67,22 @@ class DeletingTools(EditingTools):
         self.funcid = self.network_canvas.add_deleting_bind()
 
     def delete(self):
+        """
+        This method destroys deleting tools when executed.
+        """
         self.deleting_tools.destroy()
 
     def click(self):
+        """
+        This method is executed on button click and creates tools frame
+        following current tools frame.
+        """
         self.delete()
         self.network_canvas.remove_deleting_bind(self.funcid)
         ModifyingTools(self.network_canvas, self.tools_frame)
 
 class ModifyingTools(EditingTools):
-    """docstring for ModifyingTools."""
+    """This child class implements modifying tools."""
     def __init__(self, network_canvas, tools_frame):
         super(ModifyingTools, self).__init__(network_canvas, tools_frame)
         self.modifying_tools = Frame(self.tools_frame)
@@ -97,9 +110,16 @@ class ModifyingTools(EditingTools):
         modify_button.pack()
 
     def delete(self):
+        """
+        This method destroys modifying tools when executed.
+        """
         self.modifying_tools.destroy()
 
     def click(self):
+        """
+        This method is executed on button click and creates tools frame
+        following current tools frame.
+        """
         width = self.width_entry.get()
         if width == '':
             width = DEFAULT_WIDTH
@@ -108,6 +128,13 @@ class ModifyingTools(EditingTools):
         if alpha == '':
             alpha = DEFAULT_ALPHA
         alpha = float(alpha)
+        if width < 0:
+            messagebox.showinfo("Error", "Width must be a positive number.")
+            raise ValueError("Width must be a positive number.")
+
+        if alpha < 0 or alpha > 1:
+            messagebox.showinfo("Error", "Absorption coefficient must be between 0 and 1")
+            raise ValueError("Absorption coefficient must be between 0 and 1")
 
         self.delete()
         self.network_canvas.modify_network(width, alpha)
@@ -115,7 +142,7 @@ class ModifyingTools(EditingTools):
         CustomisingTools(self.network_canvas, self.tools_frame)
 
 class CustomisingTools(EditingTools):
-    """docstring for CustomisingTools."""
+    """This child class implements customising tools."""
     def __init__(self, network_canvas, tools_frame):
         super(CustomisingTools, self).__init__(network_canvas, tools_frame)
         self.customising_tools = Frame(self.tools_frame)
@@ -146,36 +173,57 @@ class CustomisingTools(EditingTools):
         self.funcid = self.network_canvas.add_selecting_bind()
 
     def delete(self):
+        """
+        This method destroys customising tools when executed.
+        """
         self.customising_tools.destroy()
 
     def customise_click(self):
-        width = self.width_entry.get()
-        if width == '':
-            width = False
+        """
+        This method is executed on customise button click and customises
+        network with specified data.
+        """
+        if self.network_canvas.selected is False:
+            messagebox.showinfo("Error", "Nothing selected")
+            raise ValueError("Nothing selected")
         else:
-            width = float(width)
-        alpha = self.alpha_entry.get()
-        if alpha == '':
-            alpha = False
-        else:
-            alpha = float(alpha)
-        selected = self.network_canvas.selected
-        if selected is None:
-            print("Nothing selected...")
-        else:
+            width = self.width_entry.get()
+            if width == '':
+                width = False
+            else:
+                width = float(width)
+            alpha = self.alpha_entry.get()
+            if alpha == '':
+                alpha = False
+            else:
+                alpha = float(alpha)
+
+            if width is not False and width < 0:
+                messagebox.showinfo("Error", "Width must be a positive number.")
+                raise ValueError("Width must be a positive number.")
+            if alpha is not False and (alpha < 0 or alpha > 1):
+                messagebox.showinfo("Error", "Absorption coefficient must be between 0 and 1")
+                raise ValueError("Absorption coefficient must be between 0 and 1")
+
             self.network_canvas.customise_network(width, alpha)
-        self.network_canvas.refresh_network()
+            self.network_canvas.selected = False
+            self.network_canvas.refresh_network()
 
 
     def finished_click(self):
+        """
+        This method is executed on button click and creates tools frame
+        following current tools frame.
+        """
         self.delete()
+        self.network_canvas.selected = False
         self.network_canvas.refresh_network()
         self.network_canvas.draw_nodes()
         self.network_canvas.remove_selecting_bind(self.funcid)
         ModelTools(self.network_canvas, self.tools_frame)
 
 class ModelTools(EditingTools):
-    """docstring for ModelTools."""
+    """This child class implements model tools."""
     def __init__(self, canvas, tools_frame):
         super(ModelTools, self).__init__(canvas, tools_frame)
         self.model_tools = Frame(self.tools_frame)
@@ -196,11 +244,29 @@ class ModelTools(EditingTools):
         compute_button.grid(row=4, column=0, columnspan=2)
 
     def delete(self):
+        """
+        This method destroys model tools when executed.
+        """
         self.model_tools.destroy()
 
     def click(self):
-        starting = int(self.starting_entry.get())
-        ending = int(self.ending_entry.get())
+        """
+        This method is executed on button click and computes the result of
+        wave propagation model.
+        """
+        starting = self.starting_entry.get()
+        if starting == '':
+            starting = False
+            messagebox.showinfo("Error", "Fill source node.")
+            raise ValueError("Fill source node.")
+        starting = int(starting)
+
+        ending = self.ending_entry.get()
+        if starting == '':
+            starting = False
+            messagebox.showinfo("Error", "Fill source node.")
+            raise ValueError("Fill source node.")
+        ending = int(ending)
         threshold = self.threshold_entry.get()
         if threshold == '':
             threshold = 2

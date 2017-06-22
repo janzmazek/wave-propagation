@@ -3,7 +3,7 @@ This module constructs network of streets.
 """
 
 import numpy as np
-import yaml
+import json
 
 
 class Constructor(object):
@@ -248,7 +248,7 @@ class Constructor(object):
                 "positions": self.__positions.tolist(),
                 "stage": self.__stage
                 }
-            yaml.dump(outvalues, outfile)
+            json.dump(outvalues, outfile)
 
     def import_network(self, invalues):
         self.__horizontals = invalues["horizontals"]

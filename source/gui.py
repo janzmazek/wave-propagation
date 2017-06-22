@@ -1,12 +1,12 @@
 from tkinter import *
 from tkinter import filedialog
-import yaml
+import json
 from source.editingTools import *
 from source.networkCanvas import NetworkCanvas
 from source.constructor import Constructor
 
 # Global constants
-WIDTH = 800
+WIDTH = 600
 HEIGHT = 500
 
 
@@ -56,16 +56,17 @@ class Gui(object):
         # create Window menu
         window_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Window", menu=window_menu)
-        window_menu.add_command(label="Small", command=self.hello)
-        window_menu.add_command(label="Medium", command=self.hello)
-        window_menu.add_command(label="Big", command=self.hello)
+        window_menu.add_command(label="Small", command=lambda: self.change_window("small"))
+        window_menu.add_command(label="Medium", command=lambda: self.change_window("medium"))
+        window_menu.add_command(label="Big", command=lambda: self.change_window("big"))
 
         # Create Tools menu
         tools_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Delete streets", command=self.hello)
-        tools_menu.add_command(label="Modify network", command=self.hello)
-        tools_menu.add_command(label="Customise streets", command=self.hello)
+        tools_menu.add_command(label="Move streets", command=lambda: self.change_tool("move"))
+        tools_menu.add_command(label="Delete streets", command=lambda: self.change_tool("delete"))
+        tools_menu.add_command(label="Modify network", command=lambda: self.change_tool("modify"))
+        tools_menu.add_command(label="Customise streets", command=lambda: self.change_tool("customise"))
 
         # create Help menu
         help_menu = Menu(self.menubar, tearoff=0)
@@ -76,7 +77,17 @@ class Gui(object):
         self.master.config(menu=self.menubar)
 
     def hello(self):
-        print("Hello world!")
+        print("Hello")
+
+    def change_window(self, window):
+        if self.canvas and self.tools_frame:
+            if window == "small":
+                self.canvas.config(width=WIDTH/1.5//1, height=HEIGHT/1.5//1)
+            elif window == "medium":
+                self.canvas.config(width=WIDTH, height=HEIGHT)
+            elif window == "big":
+                self.canvas.config(width=1.5*WIDTH//1, height=1.5*HEIGHT//1)
+
 
     def add_left_frame(self):
         """
@@ -142,33 +153,31 @@ class Gui(object):
         if initial_length == '':
             initial_length = DEFAULT_LENGTH
         initial_length = int(initial_length//1)
-        self.add_widgets()
+        self.add_canvas_and_tools()
         self.constructor = Constructor(horizontals, verticals, initial_length)
-        network_canvas = NetworkCanvas(self.canvas, self.constructor)
-        editing_tools = MovingTools(network_canvas, self.tools_frame)
-        self.master.config(menu=self.menubar)
+        self.network_canvas = NetworkCanvas(self.canvas, self.constructor)
+        editing_tools = MovingTools(self.network_canvas, self.tools_frame)
 
     def open_click(self):
         filename = filedialog.askopenfilename()
         if filename is None:
             return
         with open(filename, "r") as file:
-            invalues = yaml.load(file)
+            invalues = json.load(file)
         horizontals = invalues["horizontals"]
         verticals = invalues["verticals"]
         modified_adjacency = invalues["modified_adjacency"]
 
-        self.add_widgets()
+        self.add_canvas_and_tools()
         self.constructor = Constructor(horizontals, verticals)
         self.constructor.import_network(invalues)
-        network_canvas = NetworkCanvas(self.canvas, self.constructor)
+        self.network_canvas = NetworkCanvas(self.canvas, self.constructor)
         if modified_adjacency is None:
-            MovingTools(network_canvas, self.tools_frame)
+            ModifyingTools(self.network_canvas, self.tools_frame)
         else:
-            CustomisingTools(network_canvas, self.tools_frame)
-        #self.master.config(menu=self.menubar)
+            ModelTools(self.network_canvas, self.tools_frame)
 
-    def add_widgets(self):
+    def add_canvas_and_tools(self):
         if self.canvas and self.tools_frame:
             self.canvas.destroy()
             self.tools_frame.destroy()
@@ -186,7 +195,21 @@ class Gui(object):
 
     def save_click(self):
         if self.canvas and self.tools_frame:
-            filename = filedialog.asksaveasfile(mode='w', defaultextension=".yaml")
+            filename = filedialog.asksaveasfile(mode='w', defaultextension=".json")
             if filename is None: # asksaveasfile return `None` if dialog closed with "cancel".
                 return
             self.constructor.export_network(filename.name)
+        else:
+            print("Nothing to save!")
+
+    def change_tool(self, tool):
+        self.add_canvas_and_tools()
+        if self.constructor:
+            if tool=="move":
+                pass
+            elif tool=="delete":
+                pass
+            elif tool=="modify":
+                pass
+            elif tool=="customise":
+                pass

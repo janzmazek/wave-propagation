@@ -1,8 +1,11 @@
 from tkinter import *
+from tkinter import filedialog
+import yaml
 from source.editingTools import *
+from source.networkCanvas import NetworkCanvas
+from source.constructor import Constructor
 
 # Global constants
-
 WIDTH = 800
 HEIGHT = 500
 
@@ -16,6 +19,7 @@ class Gui(object):
         # Initial state
         self.master = Tk()
         self.master.title("Wave propagation")
+        self.constructor = False
 
         # Main widgets
         self.left_frame = False
@@ -30,12 +34,49 @@ class Gui(object):
         self.initial_length_entry = False
 
         # Initial state
+        self.add_main_menu()
         self.add_left_frame()
         self.add_right_frame()
         self.add_starting_frame()
         self.master.resizable(0,0)
         self.master.iconbitmap('py.ico')
         self.master.mainloop()
+
+    def add_main_menu(self):
+        # create main menu
+
+        self.menubar = Menu(self.master)
+
+        # Create file menu
+        self.file_menu = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="File", menu=self.file_menu)
+        self.file_menu.add_command(label="Open", command=self.open_click)
+        self.file_menu.add_command(label="Save", command=self.save_click)
+
+        # create Window menu
+        window_menu = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Window", menu=window_menu)
+        window_menu.add_command(label="Small", command=self.hello)
+        window_menu.add_command(label="Medium", command=self.hello)
+        window_menu.add_command(label="Big", command=self.hello)
+
+        # Create Tools menu
+        tools_menu = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Tools", menu=tools_menu)
+        tools_menu.add_command(label="Delete streets", command=self.hello)
+        tools_menu.add_command(label="Modify network", command=self.hello)
+        tools_menu.add_command(label="Customise streets", command=self.hello)
+
+        # create Help menu
+        help_menu = Menu(self.menubar, tearoff=0)
+        self.menubar.add_cascade(label="Help", menu=help_menu)
+        help_menu.add_command(label="About", command=self.hello)
+
+        # display the menu
+        self.master.config(menu=self.menubar)
+
+    def hello(self):
+        print("Hello world!")
 
     def add_left_frame(self):
         """
@@ -95,13 +136,39 @@ class Gui(object):
         """
         This method is executed when draw button is clicked.
         """
-        horizontals = int(self.horizontals_entry.get())
-        verticals = int(self.verticals_entry.get())
+        horizontals = int(self.horizontals_entry.get())//1
+        verticals = int(self.verticals_entry.get())//1
         initial_length = self.initial_length_entry.get()
         if initial_length == '':
             initial_length = DEFAULT_LENGTH
-        initial_length = int(initial_length)
+        initial_length = int(initial_length//1)
+        self.add_widgets()
+        self.constructor = Constructor(horizontals, verticals, initial_length)
+        network_canvas = NetworkCanvas(self.canvas, self.constructor)
+        editing_tools = MovingTools(network_canvas, self.tools_frame)
+        self.master.config(menu=self.menubar)
 
+    def open_click(self):
+        filename = filedialog.askopenfilename()
+        if filename is None:
+            return
+        with open(filename, "r") as file:
+            invalues = yaml.load(file)
+        horizontals = invalues["horizontals"]
+        verticals = invalues["verticals"]
+        modified_adjacency = invalues["modified_adjacency"]
+
+        self.add_widgets()
+        self.constructor = Constructor(horizontals, verticals)
+        self.constructor.import_network(invalues)
+        network_canvas = NetworkCanvas(self.canvas, self.constructor)
+        if modified_adjacency is None:
+            MovingTools(network_canvas, self.tools_frame)
+        else:
+            CustomisingTools(network_canvas, self.tools_frame)
+        #self.master.config(menu=self.menubar)
+
+    def add_widgets(self):
         if self.canvas and self.tools_frame:
             self.canvas.destroy()
             self.tools_frame.destroy()
@@ -115,4 +182,11 @@ class Gui(object):
                                       pady=10
                                       )
         self.tools_frame.pack(fill=BOTH, expand=1)
-        editing_tools = MovingTools(self.canvas, self.tools_frame, horizontals, verticals, initial_length)
+
+
+    def save_click(self):
+        if self.canvas and self.tools_frame:
+            filename = filedialog.asksaveasfile(mode='w', defaultextension=".yaml")
+            if filename is None: # asksaveasfile return `None` if dialog closed with "cancel".
+                return
+            self.constructor.export_network(filename.name)

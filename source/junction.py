@@ -99,6 +99,6 @@ Opposite streets must be same width. Modify junction {0}".format(current))
                 raise ValueError("This junction is not (yet) implemented! \
 Opposite streets must be same width. Modify junction {0}".format(current))
         elif self.__junction == "crossroads":
-            if not widths["backward"] == widths["forward"] and not widths["left"] == widths["right"]:
+            if not widths["backward"] == widths["forward"] or not widths["left"] == widths["right"]:
                 raise ValueError("This junction is not (yet) implemented! \
 Opposite streets must be same width. Modify junction {0}".format(current))

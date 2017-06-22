@@ -1,13 +1,10 @@
-from tkinter import *
-from source.constructor import Constructor
-
 OFFSET = 20
 
 class NetworkCanvas(object):
     """docstring for Canvas."""
-    def __init__(self, canvas, horizontals, verticals, initial_length):
+    def __init__(self, canvas, constructor):
         self.canvas = canvas
-        self.constructor = Constructor(horizontals, verticals, initial_length)
+        self.constructor = constructor
 
         self.modified = False
 
@@ -15,27 +12,18 @@ class NetworkCanvas(object):
         self.selected = False
 
     def add_moving_bind(self):
-        funcid1 = self.canvas.bind("<Button-1>", self.click_to_move)
-        funcid2 = self.canvas.bind("<ButtonRelease-1>", self.release_to_move)
-        return (funcid1, funcid2)
+        self.canvas.bind("<Button-1>", self.click_to_move)
+        self.canvas.bind("<ButtonRelease-1>", self.release_to_move)
 
     def add_deleting_bind(self):
-        funcid = self.canvas.bind("<Button-1>", self.click_to_delete)
-        return funcid
+        self.canvas.bind("<Button-1>", self.click_to_delete)
 
     def add_selecting_bind(self):
-        funcid = self.canvas.bind("<Button-1>", self.click_to_select)
-        return funcid
+        self.canvas.bind("<Button-1>", self.click_to_select)
 
-    def remove_moving_bind(self, funcid1, funcid2):
-        self.canvas.unbind("<Button-1>", funcid1)
-        self.canvas.unbind("<ButtonRelease-1", funcid2)
-
-    def remove_deleting_bind(self, funcid):
-        self.canvas.unbind("<Button-1>", funcid)
-
-    def remove_selecting_bind(self, funcid):
-        self.canvas.unbind("<Button-1>", funcid)
+    def delete_binds(self):
+        self.canvas.unbind("<Button-1>")
+        self.canvas.unbind("<ButtonRelease-1>")
 
     def draw_network(self):
         """
@@ -85,6 +73,10 @@ class NetworkCanvas(object):
 
     def refresh_network(self):
         self.clear_network()
+        if self.constructor.get_modified_adjacency() is None:
+            self.modified = False
+        else:
+            self.modified = True
         self.draw_network()
 
     def modify_network(self, width, alpha):

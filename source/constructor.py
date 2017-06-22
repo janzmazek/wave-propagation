@@ -3,6 +3,7 @@ This module constructs network of streets.
 """
 
 import numpy as np
+import yaml
 
 
 class Constructor(object):
@@ -130,7 +131,7 @@ class Constructor(object):
             for j in range(i):
                 if self.__adjacency[i][j] == 1:
                     if self.__positions[i][1] == self.__positions[j][1]:
-                        length = abs(self.__positions[i][0] - self.__positions[j][0])
+                        length = abs(self.__positions[i][0] - self.__positions[j][0]).tolist()
                         if self.__positions[i][0] < self.__positions[j][0]:
                             orientation = 0
                         elif self.__positions[i][0] > self.__positions[j][0]:
@@ -138,7 +139,7 @@ class Constructor(object):
                         else:
                             raise ValueError("Points are at the same position.")
                     elif self.__positions[i][0] == self.__positions[j][0]:
-                        length = abs(self.__positions[i][1] - self.__positions[j][1])
+                        length = abs(self.__positions[i][1] - self.__positions[j][1]).tolist()
                         if self.__positions[i][1] < self.__positions[j][1]:
                             orientation = 1
                         elif self.__positions[i][1] > self.__positions[j][1]:
@@ -235,3 +236,25 @@ class Constructor(object):
                             style='stroke: rgb({4}, 0, {5}); stroke-width:{6}'/>\n".format(
                                 xi, yi, xj, yj, int(alpha*255), int((1-alpha)*255), width))
             file.write("</svg></body></html>")
+
+    def export_network(self, filename):
+        with open(filename, "w") as outfile:
+            outvalues = {
+                "horizontals": self.__horizontals,
+                "verticals": self.__verticals,
+                "nodes": self.__nodes,
+                "adjacency": self.__adjacency.tolist(),
+                "modified_adjacency": self.__modified_adjacency,
+                "positions": self.__positions.tolist(),
+                "stage": self.__stage
+                }
+            yaml.dump(outvalues, outfile)
+
+    def import_network(self, invalues):
+        self.__horizontals = invalues["horizontals"]
+        self.__verticals = invalues["verticals"]
+        self.__nodes = invalues["nodes"]
+        self.__adjacency = np.array(invalues["adjacency"])
+        self.__modified_adjacency = invalues["modified_adjacency"]
+        self.__positions = np.array(invalues["positions"])
+        self.__stage = invalues["stage"]

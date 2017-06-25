@@ -25,7 +25,7 @@ class Gui(object):
         self.left_frame = False
         self.right_frame = False
         self.starting_frame = False
-        self.editing_tools = False
+        self.tools_frame = False
         self.canvas = False
 
         # Entry widgets
@@ -52,6 +52,7 @@ class Gui(object):
         self.menubar.add_cascade(label="File", menu=self.file_menu)
         self.file_menu.add_command(label="Open", command=self.open_click)
         self.file_menu.add_command(label="Save", command=self.save_click)
+        self.file_menu.add_command(label="Export image", command=self.export_click)
 
         # create Window menu
         window_menu = Menu(self.menubar, tearoff=0)
@@ -63,8 +64,7 @@ class Gui(object):
         # Create Tools menu
         tools_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Move streets", command=lambda: self.change_tool("move"))
-        tools_menu.add_command(label="Delete streets", command=lambda: self.change_tool("delete"))
+        tools_menu.add_command(label="Delete", command=lambda: self.change_tool("delete"))
         tools_menu.add_command(label="Modify network", command=lambda: self.change_tool("modify"))
         tools_menu.add_command(label="Customise streets", command=lambda: self.change_tool("customise"))
 
@@ -153,10 +153,11 @@ class Gui(object):
         if initial_length == '':
             initial_length = DEFAULT_LENGTH
         initial_length = int(initial_length//1)
-        self.add_canvas_and_tools()
+        self.add_canvas()
+        self.add_tools()
         self.constructor = Constructor(horizontals, verticals, initial_length)
         self.network_canvas = NetworkCanvas(self.canvas, self.constructor)
-        editing_tools = MovingTools(self.network_canvas, self.tools_frame)
+        MovingTools(self.network_canvas, self.tools_frame)
 
     def open_click(self):
         filename = filedialog.askopenfilename()
@@ -168,16 +169,17 @@ class Gui(object):
         verticals = invalues["verticals"]
         modified_adjacency = invalues["modified_adjacency"]
 
-        self.add_canvas_and_tools()
+        self.add_canvas()
+        self.add_tools()
         self.constructor = Constructor(horizontals, verticals)
-        self.constructor.import_network(invalues)
+        self.constructor.open_network(invalues)
         self.network_canvas = NetworkCanvas(self.canvas, self.constructor)
         if modified_adjacency is None:
             ModifyingTools(self.network_canvas, self.tools_frame)
         else:
             ModelTools(self.network_canvas, self.tools_frame)
 
-    def add_canvas_and_tools(self):
+    def add_canvas(self):
         if self.canvas and self.tools_frame:
             self.canvas.destroy()
             self.tools_frame.destroy()
@@ -192,24 +194,49 @@ class Gui(object):
                                       )
         self.tools_frame.pack(fill=BOTH, expand=1)
 
+    def add_tools(self):
+        self.tools_frame = LabelFrame(self.left_frame,
+                                      text="Editing tools",
+                                      bd=2,
+                                      relief="ridge",
+                                      padx=10,
+                                      pady=10
+                                      )
+        self.tools_frame.pack(fill=BOTH, expand=1)
+
+
 
     def save_click(self):
         if self.canvas and self.tools_frame:
             filename = filedialog.asksaveasfile(mode='w', defaultextension=".json")
             if filename is None: # asksaveasfile return `None` if dialog closed with "cancel".
                 return
-            self.constructor.export_network(filename.name)
+            self.constructor.save_network(filename.name)
         else:
             print("Nothing to save!")
 
+    def export_click(self):
+        if self.canvas and self.tools_frame:
+            filename = filedialog.asksaveasfile(mode='w', defaultextension=".html")
+            if filename is None:
+                return
+            self.constructor.export_network(filename.name)
+
     def change_tool(self, tool):
-        self.add_canvas_and_tools()
-        if self.constructor:
-            if tool=="move":
-                pass
-            elif tool=="delete":
-                pass
-            elif tool=="modify":
-                pass
-            elif tool=="customise":
-                pass
+        if not self.canvas or not self.tools_frame or not self.constructor:
+            return
+        self.tools_frame.destroy()
+        self.add_tools()
+
+        if tool=="delete":
+            self.network_canvas.unmodify_network()
+            DeletingTools(self.network_canvas, self.tools_frame)
+        elif tool=="modify":
+            self.network_canvas.unmodify_network()
+            ModifyingTools(self.network_canvas, self.tools_frame)
+        elif tool=="customise":
+            if self.network_canvas.modified is True:
+                CustomisingTools(self.network_canvas, self.tools_frame)
+            else:
+                self.network_canvas.unmodify_network()
+                ModifyingTools(self.network_canvas, self.tools_frame)

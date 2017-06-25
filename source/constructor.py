@@ -161,6 +161,10 @@ class Constructor(object):
                         "length": length,
                         "orientation": (orientation+2)%4}
 
+    def unmodify_adjacency(self):
+        self.__stage = 1
+        self.__modified_adjacency = None
+
     def change_width(self, i, j, width):
         """
         This method changes the street width of street (i, j).
@@ -215,12 +219,12 @@ class Constructor(object):
         """
         return self.__positions
 
-    def output_network(self):
+    def export_network(self, filename):
         """
         This method outputs file "output.html" with svg drawing of network.
         """
         assert self.__stage == 2
-        with open("output.html", "w") as file:
+        with open(filename, "w") as file:
             file.write("<html><head><title>Network representation</title></head><body>")
             file.write("<svg width='{0}' height='{1}'>\n".format(
                 self.__positions[self.__nodes-1][0], self.__positions[self.__nodes-1][1]))
@@ -234,10 +238,10 @@ class Constructor(object):
                         file.write(
                             "<line x1='{0}' y1='{1}' x2='{2}' y2='{3}' \
                             style='stroke: rgb({4}, 0, {5}); stroke-width:{6}'/>\n".format(
-                                xi, yi, xj, yj, int(alpha*255), int((1-alpha)*255), width))
+                                xi, yi, xj, yj, int(alpha*255), int((1-alpha)*255), width*5))
             file.write("</svg></body></html>")
 
-    def export_network(self, filename):
+    def save_network(self, filename):
         with open(filename, "w") as outfile:
             outvalues = {
                 "horizontals": self.__horizontals,
@@ -250,7 +254,7 @@ class Constructor(object):
                 }
             json.dump(outvalues, outfile)
 
-    def import_network(self, invalues):
+    def open_network(self, invalues):
         self.__horizontals = invalues["horizontals"]
         self.__verticals = invalues["verticals"]
         self.__nodes = invalues["nodes"]

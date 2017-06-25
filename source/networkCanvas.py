@@ -83,6 +83,10 @@ class NetworkCanvas(object):
         self.modified = True
         self.constructor.modify_adjacency(width, alpha)
 
+    def unmodify_network(self):
+        self.modified = False
+        self.constructor.unmodify_adjacency()
+
 
     def customise_network(self, width, alpha):
         if width:

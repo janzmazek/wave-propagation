@@ -51,23 +51,45 @@ class Gui(object):
         # Create file menu
         self.file_menu = Menu(self.menubar, tearoff=0)
         self.menubar.add_cascade(label="File", menu=self.file_menu)
-        self.file_menu.add_command(label="Open", command=lambda: self.file_click("open"))
-        self.file_menu.add_command(label="Save", command=lambda: self.file_click("save"))
-        self.file_menu.add_command(label="Export image", command=lambda: self.file_click("export"))
+        self.file_menu.add_command(label="Open",
+                                   command=lambda: self.file_click("open")
+                                   )
+        self.file_menu.add_command(label="Save",
+                                   command=lambda: self.file_click("save")
+                                   )
+        self.file_menu.add_command(label="Export image",
+                                   command=lambda: self.file_click("export")
+                                   )
 
         # create Window menu
         window_menu = Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Window", menu=window_menu)
-        window_menu.add_command(label="Small", command=lambda: self.window_click("small"))
-        window_menu.add_command(label="Medium", command=lambda: self.window_click("medium"))
-        window_menu.add_command(label="Big", command=lambda: self.window_click("big"))
+        self.menubar.add_cascade(label="Window",
+                                 menu=window_menu
+                                 )
+        window_menu.add_command(label="Small",
+                                command=lambda: self.window_click("small")
+                                )
+        window_menu.add_command(label="Medium",
+                                command=lambda: self.window_click("medium")
+                                )
+        window_menu.add_command(label="Big",
+                                command=lambda: self.window_click("big")
+                                )
 
         # Create Tools menu
         tools_menu = Menu(self.menubar, tearoff=0)
-        self.menubar.add_cascade(label="Tools", menu=tools_menu)
-        tools_menu.add_command(label="Delete", command=lambda: self.tools_click("delete"))
-        tools_menu.add_command(label="Modify network", command=lambda: self.tools_click("modify"))
-        tools_menu.add_command(label="Customise streets", command=lambda: self.tools_click("customise"))
+        self.menubar.add_cascade(label="Tools",
+                                 menu=tools_menu
+                                 )
+        tools_menu.add_command(label="Delete",
+                               command=lambda: self.tools_click("delete")
+                               )
+        tools_menu.add_command(label="Modify network",
+                               command=lambda: self.tools_click("modify")
+                               )
+        tools_menu.add_command(label="Customise streets",
+                               command=lambda: self.tools_click("customise")
+                               )
 
         # create Help menu
         help_menu = Menu(self.menubar, tearoff=0)
@@ -138,7 +160,11 @@ class Gui(object):
         """
         if self.canvas:
             self.canvas.destroy()
-        self.canvas = Canvas(self.right_frame, width=WIDTH, height=HEIGHT, bg="AntiqueWhite1")
+        self.canvas = Canvas(self.right_frame,
+                             width=WIDTH,
+                             height=HEIGHT,
+                             bg="AntiqueWhite1"
+                             )
         self.canvas.pack()
 
     def add_tools(self):
@@ -200,12 +226,16 @@ class Gui(object):
         if not self.canvas or not self.tools_frame:
             return # next options not available in starting window
         if file_option=="save":
-            filename = filedialog.asksaveasfile(mode='w', defaultextension=".json")
+            filename = filedialog.asksaveasfile(mode='w',
+                                                defaultextension=".json"
+                                                )
             if filename is None: # asksaveasfile return `None` if dialog closed with "cancel".
                 return
             self.constructor.save_network(filename.name)
         elif file_option=="export":
-            filename = filedialog.asksaveasfile(mode='w', defaultextension=".html")
+            filename = filedialog.asksaveasfile(mode='w',
+                                                defaultextension=".html"
+                                                )
             if filename is None:
                 return
             self.constructor.export_network(filename.name)
@@ -233,7 +263,8 @@ class Gui(object):
 
     def window_click(self, window):
         """
-        This method is executed when one of the "window" menu options is clicked.
+        This method is executed when one of the "window" menu options is
+        clicked.
         """
         if self.canvas and self.tools_frame:
             if window == "small":

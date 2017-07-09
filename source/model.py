@@ -1,6 +1,7 @@
 """
-This module performs probabilistic model on some network of streets given by the
-modified adjacency matrix (with dictionary of length, width, alpha, orientation).
+This module performs probabilistic model on some network of streets given by
+the modified adjacency matrix (with dictionary of length, width, alpha,
+orientation).
 """
 #from collections import defaultdict
 import numpy as np
@@ -51,8 +52,8 @@ class Model(object):
     def solve(self, treshold):
         """
         This method is the main method of the class and it solves the wave
-        propagation problem. Treshold specifies length additional to the shortest
-        path length.
+        propagation problem. Treshold specifies length additional to the
+        shortest path length.
         """
         assert self.__source is not None and self.__receiver is not None
         paths = self.__compute_paths(treshold) # obtain all connecting paths
@@ -102,12 +103,13 @@ class Model(object):
         and breaking_points arrays at each step.
         """
         functions = []
+        rotations = [0]
         breaking_points = set()
         length = len(path)
+        rotation = 0
         if length > 1:
-            # Fill length of first street
+            # Fill length of first and second street
             lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]]
-            # Fill alpha of first street
             alphas = [self.__modified_adjacency[path[0]][path[1]]["alpha"]]
 
             for i in range(1, length-1):
@@ -118,6 +120,8 @@ class Model(object):
                 widths = self.__rotate(previous, current, following)
                 junction = Junction(widths, current)
                 functions.append(junction.compute_function())
+                rotation = (rotation+junction.correct_orientation())%2
+                rotations.append(rotation)
                 breaking_points.add(junction.compute_breaking_point())
 
                 # add length and alpha
@@ -131,6 +135,7 @@ class Model(object):
             return {
                 "path": path,
                 "functions": functions,
+                "rotations": rotations,
                 "breaks": breaking_points,
                 "lengths": lengths,
                 "alphas": alphas}
@@ -174,6 +179,7 @@ class Model(object):
         """
         path = integrand["path"]
         functions = integrand["functions"]
+        rotations = integrand["rotations"]
         breaking_points = integrand["breaks"]
         lengths = integrand["lengths"]
         alphas = integrand["alphas"]
@@ -181,9 +187,16 @@ class Model(object):
         def compose_function(theta):
             complete = 1/np.pi * (1-alphas[0])**(lengths[0]*np.tan(theta))
             for i in range(1, len(path)-1):
-                complete = complete * (1-alphas[i])**(lengths[i]*np.tan(theta)) \
-                    *functions[i-1](theta)
-            complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(theta))
+                if rotations[i] == 1:
+                    complete = complete * (1-alphas[i])**(lengths[i]*np.tan(np.pi/2-theta)) \
+                        *functions[i-1](np.pi/2-theta)
+                else:
+                    complete = complete * (1-alphas[i])**(lengths[i]*np.tan(theta)) \
+                        *functions[i-1](theta)
+            if rotations[-1] == 1:
+                complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(np.pi/2-theta))
+            else:
+                complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(theta))
             return complete
 
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)

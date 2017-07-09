@@ -121,8 +121,10 @@ class ModifyingTools(EditingTools):
             raise ValueError("Width must be a positive number.")
 
         if alpha < 0 or alpha > 1:
-            messagebox.showinfo("Error", "Absorption coefficient must be between 0 and 1")
-            raise ValueError("Absorption coefficient must be between 0 and 1")
+            messagebox.showinfo(
+                "Error", "Absorption coefficient must be between 0 and 1")
+            raise ValueError(
+                "Absorption coefficient must be between 0 and 1")
 
         self.network_canvas.modify_network(width, alpha)
         self.tools.destroy()
@@ -184,8 +186,10 @@ class CustomisingTools(EditingTools):
                 messagebox.showinfo("Error", "Width must be a positive number.")
                 raise ValueError("Width must be a positive number.")
             if alpha is not False and (alpha < 0 or alpha > 1):
-                messagebox.showinfo("Error", "Absorption coefficient must be between 0 and 1")
-                raise ValueError("Absorption coefficient must be between 0 and 1")
+                messagebox.showinfo(
+                    "Error", "Absorption coefficient must be between 0 and 1")
+                raise ValueError(
+                    "Absorption coefficient must be between 0 and 1")
 
             self.network_canvas.customise_network(width, alpha)
             self.network_canvas.selected = None
@@ -208,19 +212,28 @@ class ModelTools(EditingTools):
         self.network_canvas.draw_nodes()
         self.tools = Frame(self.tools_frame)
         self.tools.pack()
-        starting_label = Label(self.tools, text="Select starting point.")
+        starting_label = Label(self.tools,
+                               text="Select starting point."
+                               )
         starting_label.grid(row=0, column=0)
         self.starting_entry = Entry(self.tools, width=5)
         self.starting_entry.grid(row=0, column=1)
-        ending_label = Label(self.tools, text="Select ending point.")
+        ending_label = Label(self.tools,
+                             text="Select ending point."
+                             )
         ending_label.grid(row=2, column=0)
         self.ending_entry = Entry(self.tools, width=5)
         self.ending_entry.grid(row=2, column=1)
-        threshold_label = Label(self.tools, text="Choose threshold (defaults to 2).")
+        threshold_label = Label(self.tools,
+                                text="Choose threshold (defaults to 2)."
+                                )
         threshold_label.grid(row=3, column=0)
         self.threshold_entry = Entry(self.tools, width=5)
         self.threshold_entry.grid(row=3, column=1)
-        compute_button = Button(self.tools, text="Compute power", command=self.click)
+        compute_button = Button(self.tools,
+                                text="Compute power",
+                                command=self.click
+                                )
         compute_button.grid(row=4, column=0, columnspan=2)
 
     def click(self):

@@ -63,7 +63,6 @@ class TestConstructor(TestCase):
         self.assertEqual(len(adjacency),22)
         self.assertEqual(len(positions),22)
         network.modify_adjacency()
-        network.output_network()
 
     def test_modify_adjacency(self):
         # Test normal usage

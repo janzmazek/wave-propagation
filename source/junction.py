@@ -82,6 +82,12 @@ class Junction(object):
         elif self.__junction == "crossroads" and not self.__next == "backward":
             return np.arctan(1/self.__ratio)
 
+    def correct_orientation(self):
+        if self.__next == "entry" or self.__next == "straight":
+            return 0
+        else:
+            return np.pi
+
     def __validate_junction(self, widths, current):
         """
         This private method validates whether the junction is already

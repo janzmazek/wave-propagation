@@ -16,7 +16,7 @@ class Junction(object):
         self.__validate_junction(widths, current)
 
         self.__next = widths["next"] # left, forward, right or backward
-        entry = widths["entry"] # width of entry street
+        entry = widths["backward"] # width of entry street
         exiting = widths[widths["next"]] # width of exiting street
         self.__ratio = exiting/entry # ratio needed for future computations
 
@@ -24,7 +24,7 @@ class Junction(object):
         self.__turning = lambda theta, ratio: 0.5*min(ratio*np.tan(theta), 1) # FT
 
     def __define_junction(self, widths):
-        junction_size = len(widths) - 2 # number of intersecting streets
+        junction_size = len(widths) - 1 # number of intersecting streets
         if junction_size == 2:
             self.__junction = "bend"
         elif junction_size == 3:
@@ -83,10 +83,10 @@ class Junction(object):
             return np.arctan(1/self.__ratio)
 
     def correct_orientation(self):
-        if self.__next == "entry" or self.__next == "straight":
+        if self.__next == "backward" or self.__next == "forward":
             return 0
         else:
-            return np.pi
+            return 1
 
     def __validate_junction(self, widths, current):
         """

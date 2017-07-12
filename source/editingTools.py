@@ -216,50 +216,67 @@ class ModelTools(EditingTools):
                                text="Select starting point."
                                )
         starting_label.grid(row=0, column=0)
-        self.starting_entry = Entry(self.tools, width=5)
-        self.starting_entry.grid(row=0, column=1)
+        self.starting_entry_1 = Entry(self.tools, width=5)
+        self.starting_entry_1.grid(row=0, column=1)
+        self.starting_entry_2 = Entry(self.tools, width=5)
+        self.starting_entry_2.grid(row=0, column=2)
         ending_label = Label(self.tools,
                              text="Select ending point."
                              )
         ending_label.grid(row=2, column=0)
-        self.ending_entry = Entry(self.tools, width=5)
-        self.ending_entry.grid(row=2, column=1)
+        self.ending_entry_1 = Entry(self.tools, width=5)
+        self.ending_entry_1.grid(row=2, column=1)
+        self.ending_entry_2 = Entry(self.tools, width=5)
+        self.ending_entry_2.grid(row=2, column=2)
         threshold_label = Label(self.tools,
                                 text="Choose threshold (defaults to 2)."
                                 )
         threshold_label.grid(row=3, column=0)
-        self.threshold_entry = Entry(self.tools, width=5)
-        self.threshold_entry.grid(row=3, column=1)
+        self.threshold_entry = Entry(self.tools, width=12)
+        self.threshold_entry.grid(row=3, column=1, columnspan=2)
         compute_button = Button(self.tools,
                                 text="Compute power",
                                 command=self.click
                                 )
-        compute_button.grid(row=4, column=0, columnspan=2)
+        compute_button.grid(row=4, column=0, columnspan=3)
 
     def click(self):
         """
         This method is executed on button click and computes the result of
         wave propagation model.
         """
-        starting = self.starting_entry.get()
-        if starting == '':
-            starting = False
-            messagebox.showinfo("Error", "Fill source node.")
-            raise ValueError("Fill source node.")
-        starting = int(starting)//1
+        starting_1 = self.starting_entry_1.get()
+        starting_2 = self.starting_entry_2.get()
+        if starting_1 == '':
+            starting_1 = False
+            messagebox.showinfo("Error", "Fill source node 1.")
+            raise ValueError("Fill source node 1.")
+        if starting_2 == '':
+            starting_2 = False
+            messagebox.showinfo("Error", "Fill source node 2.")
+            raise ValueError("Fill source node 2.")
+        starting_1 = int(starting_1)//1
+        starting_2 = int(starting_2)//1
 
-        ending = self.ending_entry.get()
-        if starting == '':
-            starting = False
-            messagebox.showinfo("Error", "Fill source node.")
-            raise ValueError("Fill source node.")
-        ending = int(ending)//1
+        ending_1 = self.ending_entry_1.get()
+        ending_2 = self.ending_entry_2.get()
+        if ending_1 == '':
+            ending_1 = False
+            messagebox.showinfo("Error", "Fill source node 1.")
+            raise ValueError("Fill source node 1.")
+        if ending_2 == '':
+            ending_2 = False
+            messagebox.showinfo("Error", "Fill source node 2.")
+            raise ValueError("Fill source node 2.")
+        ending_1 = int(ending_1)//1
+        ending_2 = int(ending_2)//1
+
         threshold = self.threshold_entry.get()
         if threshold == '':
             threshold = 2
         threshold = int(threshold)//1
         model = Model(self.network_canvas.constructor.get_modified_adjacency())
-        model.set_source(starting)
-        model.set_receiver(ending)
+        model.set_source(starting_1, starting_2)
+        model.set_receiver(ending_1, ending_2)
         power = model.solve(threshold)
         messagebox.showinfo("Result", "Power percentage: {0}".format(power))

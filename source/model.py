@@ -33,21 +33,19 @@ class Model(object):
                     adjacency[i][j] = 1
         return adjacency
 
-    def set_source(self, source, distance_from_source=0):
+    def set_source(self, source1, source2):
         """
         This setter method sets source node.
         TODO: input coordinates, find closest node, set node
         """
-        self.__source = source
-        self.__distance_from_source = distance_from_source
+        self.__source = (source1, source2)
 
-    def set_receiver(self, receiver, distance_from_receiver=0):
+    def set_receiver(self, receiver1, receiver2):
         """
         This setter method sets receiver node.
         TODO: input coordinates, find closest node, set node
         """
-        self.__receiver = receiver
-        self.__distance_from_receiver = distance_from_receiver
+        self.__receiver = (receiver1, receiver2)
 
     def solve(self, treshold):
         """
@@ -73,27 +71,40 @@ class Model(object):
         """
         This private method computes all paths between source and receiver.
         """
-        shortest_length = nx.shortest_path_length(
-            self.__graph, self.__source, self.__receiver)
+        lengths = []
+        paths = []
+        # Find lengths of all four combinations
+        for source in self.__source:
+            for receiver in self.__receiver:
+                lengths.append(nx.shortest_path_length(self.__graph, source, receiver))
+        # Find minimal length and compute cutoff
+        shortest_length = min(lengths)
         cutoff = shortest_length + treshold
-        distances_dictionary = nx.all_pairs_dijkstra_path_length(
-            self.__graph)[self.__receiver]
-        paths = self.__find_paths(distances_dictionary, self.__source, cutoff+1)
+
+        # Find all paths of lengths up to cutoff of all four combinations
+        for source in self.__source:
+            for receiver in self.__receiver:
+                paths.extend(self.__find_paths(source, receiver, cutoff+1))
         return paths
 
 
-    def __find_paths(self, distances_dictionary, element, n):
+    def __find_paths(self, element, receiver, n, distances=False):
         """
         This private method implements an algorithm for finding all paths
         between source and receiver of specified length.
         """
+        # Compute distances dictionary only the first time
+        if not distances:
+            distances = nx.all_pairs_dijkstra_path_length(self.__graph)[receiver]
         paths = []
+        # Recursive algorithm
         if n > 0:
             for neighbor in self.__graph.neighbors(element):
-                for path in self.__find_paths(distances_dictionary, neighbor, n-1):
-                    if distances_dictionary[element] < n:
+                for path in self.__find_paths(neighbor, receiver, n-1, distances):
+                    if distances[element] < n:
                         paths.append([element]+path)
-        if element == self.__receiver:
+        # Only append path if the last element is the receiver node
+        if element == receiver:
             paths.append([element])
         return paths
 
@@ -102,45 +113,56 @@ class Model(object):
         This private method iterates through the path and fills the functions
         and breaking_points arrays at each step.
         """
-        functions = []
-        rotations = [0]
-        breaking_points = set()
-        length = len(path)
-        rotation = 0
-        if length > 1:
-            # Fill length of first and second street
-            lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]]
-            alphas = [self.__modified_adjacency[path[0]][path[1]]["alpha"]]
-
-            for i in range(1, length-1):
-                previous = path[i-1]
-                current = path[i]
-                following = path[i+1]
-
-                widths = self.__rotate(previous, current, following)
-                junction = Junction(widths, current)
-                functions.append(junction.compute_function())
-                rotation = (rotation+junction.correct_orientation())%2
-                rotations.append(rotation)
-                breaking_points.add(junction.compute_breaking_point())
-
-                # add length and alpha
-                lengths.append(self.__modified_adjacency[current][following]["length"])
-                alphas.append(self.__modified_adjacency[current][following]["alpha"])
-
-            # Subtract distance from source/receiver
-            lengths[0] -= self.__distance_from_source
-            lengths[-1] -= self.__distance_from_receiver
-
-            return {
-                "path": path,
-                "functions": functions,
-                "rotations": rotations,
-                "breaks": breaking_points,
-                "lengths": lengths,
-                "alphas": alphas}
+        # Prepend "apparent" source
+        if path[0] == self.__source[0]:
+            path.insert(0, self.__source[1])
+            lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]/2]
         else:
-            raise ValueError("Path too short.")
+            path.insert(0, self.__source[0])
+            lengths = [self.__modified_adjacency[path[0]][path[1]]["length"]/2]
+
+        # Fill width, alpha and rotation of the first street
+        widths = [self.__modified_adjacency[path[0]][path[1]]["width"]]
+        alphas = [self.__modified_adjacency[path[0]][path[1]]["alpha"]]
+        rotations = [0]
+
+        # Append "apparent" receiver
+        if path[-1] == self.__receiver[0]:
+            path.append(self.__receiver[1])
+        else:
+            path.append(self.__receiver[0])
+
+        # Set empty array of functions and breaking points
+        functions = []
+        breaking_points = set()
+
+        # Iterate through the rest of the path
+        for i in range(1, len(path)-1):
+            previous, current, following = path[i-1], path[i], path[i+1]
+
+            # Get widths of appropriately rotated junction
+            rotated_widths = self.__rotate(previous, current, following)
+            junction = Junction(rotated_widths, current)
+            functions.append(junction.compute_function())
+            breaking_points.add(junction.compute_breaking_point())
+
+            # Add length, alpha and rotation of the following street
+            lengths.append(self.__modified_adjacency[current][following]["length"])
+            widths.append(self.__modified_adjacency[current][following]["width"])
+            alphas.append(self.__modified_adjacency[current][following]["alpha"])
+            rotations.append((rotations[-1]+junction.correct_orientation())%2)
+
+        # Last length is only half
+        lengths[-1] = lengths[-1]/2
+
+        return {"path": path,
+                "functions": functions,
+                "breaks": breaking_points,
+                "rotations": rotations,
+                "lengths": lengths,
+                "widths": widths,
+                "alphas": alphas
+                }
 
     def __rotate(self, previous, current, following):
         """
@@ -152,7 +174,7 @@ class Model(object):
         right = (orientation+1)%4
         forward = (orientation+2)%4
         left = (orientation+3)%4
-        rotated = {"entry": self.__modified_adjacency[current][previous]["width"]}
+        rotated = {}
         for neighbor in self.__graph.neighbors(current):
             if self.__modified_adjacency[current][neighbor]["orientation"] == left:
                 rotated["left"] = self.__modified_adjacency[current][neighbor]["width"]
@@ -179,24 +201,23 @@ class Model(object):
         """
         path = integrand["path"]
         functions = integrand["functions"]
-        rotations = integrand["rotations"]
         breaking_points = integrand["breaks"]
+        rotations = integrand["rotations"]
         lengths = integrand["lengths"]
+        widths = integrand["widths"]
         alphas = integrand["alphas"]
 
         def compose_function(theta):
-            complete = 1/np.pi * (1-alphas[0])**(lengths[0]*np.tan(theta))
+            # Scalar coefficient and first street element
+            complete = 1/np.pi * (1-alphas[0])**(lengths[0]/widths[0]*np.tan(theta))
+            # Junctions functions and street elements
             for i in range(1, len(path)-1):
                 if rotations[i] == 1:
-                    complete = complete * (1-alphas[i])**(lengths[i]*np.tan(np.pi/2-theta)) \
-                        *functions[i-1](np.pi/2-theta)
+                    angle = np.pi/2 - theta
                 else:
-                    complete = complete * (1-alphas[i])**(lengths[i]*np.tan(theta)) \
-                        *functions[i-1](theta)
-            if rotations[-1] == 1:
-                complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(np.pi/2-theta))
-            else:
-                complete = complete * (1-alphas[-1])**(lengths[-1]*np.tan(theta))
+                    angle = theta
+                complete = complete * (1-alphas[i])**(lengths[i]/widths[i]*np.tan(theta)) \
+                    *functions[i-1](theta)
             return complete
 
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)

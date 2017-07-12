@@ -1,7 +1,8 @@
 from tkinter import *
 from tkinter import messagebox
+from source.constructor import Constructor
 from source.model import Model
-
+from source.networkCanvas import NetworkCanvas
 
 DEFAULT_LENGTH = 100
 DEFAULT_WIDTH = 10
@@ -9,22 +10,86 @@ DEFAULT_ALPHA = 0.5
 
 class EditingTools(object):
     """This class of methods constructs tools widget for GUI."""
-    def __init__(self, network_canvas, tools_frame):
-        self.network_canvas = network_canvas
+    def __init__(self, tools_frame, constructor=False, network_canvas=False):
         self.tools_frame = tools_frame
+        self.constructor = constructor
+        self.network_canvas = network_canvas
         self.tools = False
 
-        # delete binds
-        self.network_canvas.selected = False
-        self.network_canvas.delete_binds()
-        self.network_canvas.refresh_network()
+        # Delete binds
+        if network_canvas is not False:
+            self.network_canvas.selected = False
+            self.network_canvas.delete_binds()
+            self.network_canvas.refresh_network()
+
+    def add_constructor(self, horizontals, verticals, initial_length):
+        self.constructor = Constructor(horizontals, verticals, initial_length)
+
+    def add_network_canvas(self, canvas, constructor):
+        self.network_canvas = NetworkCanvas(canvas, constructor)
+
+class CreationTools(EditingTools):
+    """This child class implements creation tools."""
+    def __init__(self, tools_frame, canvas, network_canvas=False):
+        self.canvas = canvas
+        super(CreationTools, self).__init__(tools_frame, False, network_canvas)
+        if self.network_canvas:
+            self.network_canvas.clear_network()
+        self.tools = Frame(self.tools_frame)
+        self.tools.pack()
+
+        horizontals_label = Label(self.tools,
+                                  text="Horizontal streets:"
+                                  )
+        horizontals_label.grid(row=0, column=0)
+
+        self.horizontals_entry = Entry(self.tools, width=5)
+        self.horizontals_entry.grid(row=0, column=1)
+
+        verticals_label = Label(self.tools,
+                                text="Vertical streets:"
+                                )
+        verticals_label.grid(row=1, column=0)
+
+        self.verticals_entry = Entry(self.tools, width=5)
+        self.verticals_entry.grid(row=1, column=1)
+
+        initial_length_label = Label(self.tools,
+                                     text="Street lengths (defaults to {0}):".format(DEFAULT_LENGTH)
+                                     )
+        initial_length_label.grid(row=2, column=0)
+        self.initial_length_entry = Entry(self.tools, width=5)
+        self.initial_length_entry.grid(row=2, column=1)
+        draw_button = Button(self.tools,
+                             text="Draw network",
+                             command=self.click
+                             )
+        draw_button.grid()
+
+    def click(self):
+        """
+        This method is executed when draw button is clicked.
+        """
+        horizontals = int(self.horizontals_entry.get())//1
+        verticals = int(self.verticals_entry.get())//1
+        initial_length = self.initial_length_entry.get()
+        if initial_length == '':
+            initial_length = DEFAULT_LENGTH
+        initial_length = int(initial_length//1)
+
+        super(CreationTools, self).add_constructor(horizontals, verticals, initial_length)
+        super(CreationTools, self).add_network_canvas(self.canvas, self.constructor)
+
+        self.tools.destroy()
+        self.tools = False
+        MovingTools(self.tools_frame, self.constructor, self.network_canvas)
 
 
 class MovingTools(EditingTools):
     """This child class implements moving tools."""
-    def __init__(self, network_canvas, tools_frame):
+    def __init__(self, tools_frame, constructor, network_canvas):
         network_canvas.draw_network()
-        super(MovingTools, self).__init__(network_canvas, tools_frame)
+        super(MovingTools, self).__init__(tools_frame, constructor, network_canvas)
         self.tools = Frame(self.tools_frame)
         self.tools.pack()
         moving_message = Label(self.tools,
@@ -46,12 +111,12 @@ class MovingTools(EditingTools):
         """
         self.tools.destroy()
         self.tools = False
-        DeletingTools(self.network_canvas, self.tools_frame)
+        DeletingTools(self.tools_frame, self.constructor, self.network_canvas)
 
 class DeletingTools(EditingTools):
     """This child class implements deleting tools."""
-    def __init__(self, network_canvas, tools_frame):
-        super(DeletingTools, self).__init__(network_canvas, tools_frame)
+    def __init__(self, tools_frame, constructor, network_canvas):
+        super(DeletingTools, self).__init__(tools_frame, constructor, network_canvas)
         self.network_canvas.refresh_network()
         self.tools = Frame(self.tools_frame)
         self.tools.pack()
@@ -72,12 +137,12 @@ class DeletingTools(EditingTools):
         following current tools frame.
         """
         self.tools.destroy()
-        ModifyingTools(self.network_canvas, self.tools_frame)
+        ModifyingTools(self.tools_frame, self.constructor, self.network_canvas)
 
 class ModifyingTools(EditingTools):
     """This child class implements modifying tools."""
-    def __init__(self, network_canvas, tools_frame):
-        super(ModifyingTools, self).__init__(network_canvas, tools_frame)
+    def __init__(self, tools_frame, constructor, network_canvas):
+        super(ModifyingTools, self).__init__(tools_frame, constructor, network_canvas)
         self.network_canvas.refresh_network()
         self.tools = Frame(self.tools_frame)
         self.tools.pack()
@@ -128,12 +193,12 @@ class ModifyingTools(EditingTools):
 
         self.network_canvas.modify_network(width, alpha)
         self.tools.destroy()
-        CustomisingTools(self.network_canvas, self.tools_frame)
+        CustomisingTools(self.tools_frame, self.constructor, self.network_canvas)
 
 class CustomisingTools(EditingTools):
     """This child class implements customising tools."""
-    def __init__(self, network_canvas, tools_frame):
-        super(CustomisingTools, self).__init__(network_canvas, tools_frame)
+    def __init__(self, tools_frame, constructor, network_canvas):
+        super(CustomisingTools, self).__init__(tools_frame, constructor, network_canvas)
         self.network_canvas.refresh_network()
         self.tools = Frame(self.tools_frame)
         self.tools.pack()
@@ -202,12 +267,12 @@ class CustomisingTools(EditingTools):
         following current tools frame.
         """
         self.tools.destroy()
-        ModelTools(self.network_canvas, self.tools_frame)
+        ModelTools(self.tools_frame, self.constructor, self.network_canvas)
 
 class ModelTools(EditingTools):
     """This child class implements model tools."""
-    def __init__(self, canvas, tools_frame):
-        super(ModelTools, self).__init__(canvas, tools_frame)
+    def __init__(self, tools_frame, constructor, network_canvas):
+        super(ModelTools, self).__init__(tools_frame, constructor, network_canvas)
         self.network_canvas.refresh_network()
         self.network_canvas.draw_nodes()
         self.tools = Frame(self.tools_frame)

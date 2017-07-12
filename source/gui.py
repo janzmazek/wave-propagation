@@ -2,8 +2,6 @@ from tkinter import *
 from tkinter import filedialog
 import json
 from source.editingTools import *
-from source.networkCanvas import NetworkCanvas
-from source.constructor import Constructor
 
 # Global constants
 WIDTH = 600
@@ -18,12 +16,10 @@ class Gui(object):
         # Initial state
         self.master = Tk()
         self.master.title("Wave propagation")
-        self.constructor = False
 
         # Main widgets
         self.left_frame = False
         self.right_frame = False
-        self.starting_frame = False
         self.tools_frame = False
         self.canvas = False
 
@@ -36,7 +32,10 @@ class Gui(object):
         self.add_main_menu()
         self.add_left_frame()
         self.add_right_frame()
-        self.add_starting_frame()
+        self.add_canvas()
+        self.add_tools()
+        self.tools = CreationTools(self.tools_frame, self.canvas)
+
         self.master.resizable(0,0)
         self.master.iconbitmap('py.ico')
         self.master.mainloop()
@@ -81,7 +80,10 @@ class Gui(object):
         self.menubar.add_cascade(label="Tools",
                                  menu=tools_menu
                                  )
-        tools_menu.add_command(label="Delete",
+        tools_menu.add_command(label="Create newtork",
+                               command=lambda: self.tools_click("create")
+                               )
+        tools_menu.add_command(label="Delete street",
                                command=lambda: self.tools_click("delete")
                                )
         tools_menu.add_command(label="Modify network",
@@ -114,45 +116,6 @@ class Gui(object):
         self.right_frame = Frame()
         self.right_frame.grid(row=0, column=1, sticky="n")
 
-    def add_starting_frame(self):
-        """
-        This method creates 'starting frame' for constructing initial network
-        grid.
-        """
-        self.starting_frame = LabelFrame(self.left_frame,
-                                         text="Create new network",
-                                         bd=2,
-                                         relief="ridge",
-                                         padx=10,
-                                         pady=10
-                                         )
-        self.starting_frame.pack(fill=BOTH, expand=1)
-
-        horizontals_label = Label(self.starting_frame,
-                                  text="Horizontal streets:")
-        horizontals_label.grid(row=0, column=0)
-
-        self.horizontals_entry = Entry(self.starting_frame, width=5)
-        self.horizontals_entry.grid(row=0, column=1)
-
-        verticals_label = Label(self.starting_frame,
-                                text="Vertical streets:")
-        verticals_label.grid(row=1, column=0)
-
-        self.verticals_entry = Entry(self.starting_frame, width=5)
-        self.verticals_entry.grid(row=1, column=1)
-
-        initial_length_label = Label(self.starting_frame,
-                                     text="Street lengths (defaults to {0}):".format(DEFAULT_LENGTH)
-                                     )
-        initial_length_label.grid(row=2, column=0)
-        self.initial_length_entry = Entry(self.starting_frame, width=5)
-        self.initial_length_entry.grid(row=2, column=1)
-        draw_button = Button(self.starting_frame,
-                            text="Draw network",
-                            command=self.draw_click)
-        draw_button.grid()
-
     def add_canvas(self):
         """
         This method destroys canvas if already instantiated and creates a new
@@ -183,22 +146,6 @@ class Gui(object):
                                       )
         self.tools_frame.pack(fill=BOTH, expand=1)
 
-    def draw_click(self):
-        """
-        This method is executed when draw button is clicked.
-        """
-        horizontals = int(self.horizontals_entry.get())//1
-        verticals = int(self.verticals_entry.get())//1
-        initial_length = self.initial_length_entry.get()
-        if initial_length == '':
-            initial_length = DEFAULT_LENGTH
-        initial_length = int(initial_length//1)
-        self.add_canvas()
-        self.add_tools()
-        self.constructor = Constructor(horizontals, verticals, initial_length)
-        self.network_canvas = NetworkCanvas(self.canvas, self.constructor)
-        MovingTools(self.network_canvas, self.tools_frame)
-
     def file_click(self, file_option):
         """
         This method is executed when one of the "file" menu options is clicked.
@@ -213,15 +160,21 @@ class Gui(object):
             verticals = invalues["verticals"]
             modified_adjacency = invalues["modified_adjacency"]
 
-            self.add_canvas()
-            self.add_tools()
             self.constructor = Constructor(horizontals, verticals)
             self.constructor.open_network(invalues)
             self.network_canvas = NetworkCanvas(self.canvas, self.constructor)
+
+            self.add_tools()
             if modified_adjacency is None:
-                ModifyingTools(self.network_canvas, self.tools_frame)
+                self.tools = ModifyingTools(self.tools_frame,
+                                            self.constructor,
+                                            self.network_canvas
+                                            )
             else:
-                ModelTools(self.network_canvas, self.tools_frame)
+                self.tools = ModelTools(self.tools_frame,
+                                        self.constructor,
+                                        self.network_canvas
+                                        )
 
         if not self.canvas or not self.tools_frame:
             return # next options not available in starting window
@@ -244,32 +197,37 @@ class Gui(object):
         """
         This method is executed when one of the "tools" menu options is clicked.
         """
-        if not self.canvas or not self.tools_frame or not self.constructor:
+        if not self.tools.network_canvas:
             return
+        tools_frame = self.tools.tools_frame
+        constructor = self.tools.constructor
+        network_canvas = self.tools.network_canvas
         self.add_tools()
-
-        if tool=="delete":
-            self.network_canvas.unmodify_network()
-            DeletingTools(self.network_canvas, self.tools_frame)
+        if tool=="create":
+            self.tools.network_canvas.unmodify_network()
+            CreationTools(self.tools_frame, self.canvas, network_canvas)
+            self.tools.network_canvas = False
+        elif tool=="delete":
+            self.tools.network_canvas.unmodify_network()
+            DeletingTools(self.tools_frame, constructor, network_canvas)
         elif tool=="modify":
-            self.network_canvas.unmodify_network()
-            ModifyingTools(self.network_canvas, self.tools_frame)
+            self.tools.network_canvas.unmodify_network()
+            ModifyingTools(self.tools_frame, constructor, network_canvas)
         elif tool=="customise":
-            if self.network_canvas.modified is True:
-                CustomisingTools(self.network_canvas, self.tools_frame)
+            if self.tools.network_canvas.modified is True:
+                CustomisingTools(self.tools_frame, constructor, network_canvas)
             else:
-                self.network_canvas.unmodify_network()
-                ModifyingTools(self.network_canvas, self.tools_frame)
+                self.tools.network_canvas.unmodify_network()
+                ModifyingTools(self.tools_frame, constructor, network_canvas)
 
     def window_click(self, window):
         """
         This method is executed when one of the "window" menu options is
         clicked.
         """
-        if self.canvas and self.tools_frame:
-            if window == "small":
-                self.canvas.config(width=WIDTH/1.5//1, height=HEIGHT/1.5//1)
-            elif window == "medium":
-                self.canvas.config(width=WIDTH, height=HEIGHT)
-            elif window == "big":
-                self.canvas.config(width=1.5*WIDTH//1, height=1.5*HEIGHT//1)
+        if window == "small":
+            self.canvas.config(width=WIDTH/1.5//1, height=HEIGHT/1.5//1)
+        elif window == "medium":
+            self.canvas.config(width=WIDTH, height=HEIGHT)
+        elif window == "big":
+            self.canvas.config(width=1.5*WIDTH//1, height=1.5*HEIGHT//1)

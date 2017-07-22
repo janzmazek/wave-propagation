@@ -3,7 +3,6 @@ This module constructs network of streets.
 """
 
 import numpy as np
-import json
 
 
 class Constructor(object):
@@ -12,14 +11,23 @@ class Constructor(object):
     modifies the network using modifying methods, outputs the adjacency matrix
     of the network and outputs the visualisation in the svg format.
     """
-    def __init__(self, horizontals, verticals, length=100):
+    def __init__(self):
+        self.__horizontals = None
+        self.__verticals = None
+        self.__nodes = None
+        self.__adjacency = None
+        self.__modified_adjacency = None
+        self.__positions = None
+        self.__stage = 0
+
+    def set_grid(self, horizontals, verticals, length=100):
         self.__horizontals = horizontals
         self.__verticals = verticals
         self.__nodes = horizontals*verticals
         self.__adjacency = self.__create_adjacency()
         self.__modified_adjacency = None
         self.__positions = self.__create_positions(length)
-        self.__stage = 0
+        self.__stage = 1
 
     def __create_adjacency(self):
         """
@@ -50,7 +58,7 @@ class Constructor(object):
         """
         This method moves the horizontal line i.
         """
-        assert self.__stage == 0
+        assert self.__stage == 1
         if i in range(self.__horizontals):
             for node in range(self.__nodes):
                 if node//self.__verticals == i:
@@ -62,7 +70,7 @@ class Constructor(object):
         """
         This method moves the vertical line j.
         """
-        assert self.__stage == 0
+        assert self.__stage == 1
         if j in range(self.__verticals):
             for node in range(self.__nodes):
                 if node%self.__verticals == j:
@@ -75,9 +83,10 @@ class Constructor(object):
         This method deletes the street (i, j).
         """
         # TODO: don't allow border to be deleted...
-        if self.__stage == 0:
-            self.__stage = 1 # set stage to 1 so lines cannot be moved
-        assert self.__stage == 1
+        # TODO: bug: delete all 4 streets circular - junction remains
+        if self.__stage == 1:
+            self.__stage = 2 # set stage to 1 so lines cannot be moved
+        assert self.__stage == 2
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__adjacency[i][j] != 0:
                 self.__adjacency[i][j] = 0
@@ -95,6 +104,8 @@ class Constructor(object):
                         self.__adjacency[connections[0]][connections[1]] = 1
                         self.__adjacency[connections[1]][connections[0]] = 1
                         to_delete.append(i)
+                elif sum(self.__adjacency[i]) == 0:
+                    to_delete.append(i)
                 if sum(self.__adjacency[j]) == 2:
                     connections = []
                     for k in range(self.__nodes):
@@ -107,6 +118,8 @@ class Constructor(object):
                         self.__adjacency[connections[0]][connections[1]] = 1
                         self.__adjacency[connections[1]][connections[0]] = 1
                         to_delete.append(j)
+                elif sum(self.__adjacency[i]) == 0:
+                    to_delete.append(i)
                 if len(to_delete) != 0:
                     self.__adjacency = np.delete(self.__adjacency, to_delete, axis=0)
                     self.__adjacency = np.delete(self.__adjacency, to_delete, axis=1)
@@ -123,9 +136,9 @@ class Constructor(object):
         This method creates new adjacency matrix with dictionaries of keys
         (alpha, street width, street length, orientation) instead of 1s.
         """
-        if self.__stage == 0 or self.__stage == 1:
-            self.__stage = 2
-        assert self.__stage == 2
+        if self.__stage == 1 or self.__stage == 2:
+            self.__stage = 3
+        assert self.__stage == 3
         self.__modified_adjacency = self.__adjacency.tolist() # To python structure
         for i in range(self.__nodes):
             for j in range(i):
@@ -162,14 +175,14 @@ class Constructor(object):
                         "orientation": (orientation+2)%4}
 
     def unmodify_adjacency(self):
-        self.__stage = 1
+        self.__stage = 2
         self.__modified_adjacency = None
 
     def change_width(self, i, j, width):
         """
         This method changes the street width of street (i, j).
         """
-        assert self.__stage == 2
+        assert self.__stage == 3
         assert width > 0
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] is not 0:
@@ -184,7 +197,7 @@ class Constructor(object):
         """
         This method changes the absorption coefficient of street (i, j).
         """
-        assert self.__stage == 2
+        assert self.__stage == 3
         assert alpha >= 0 and alpha <= 1
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] != 0:
@@ -219,11 +232,34 @@ class Constructor(object):
         """
         return self.__positions
 
-    def export_network(self, filename):
+    def get_stage(self):
+        return self.__stage
+
+    def import_network(self, invalues):
+        self.__horizontals = invalues["horizontals"]
+        self.__verticals = invalues["verticals"]
+        self.__nodes = invalues["nodes"]
+        self.__adjacency = np.array(invalues["adjacency"])
+        self.__modified_adjacency = invalues["modified_adjacency"]
+        self.__positions = np.array(invalues["positions"])
+        self.__stage = invalues["stage"]
+
+    def export_network(self):
+        return {
+                "horizontals": self.__horizontals,
+                "verticals": self.__verticals,
+                "nodes": self.__nodes,
+                "adjacency": self.__adjacency.tolist(),
+                "modified_adjacency": self.__modified_adjacency,
+                "positions": self.__positions.tolist(),
+                "stage": self.__stage
+                }
+
+    def draw_network(self, filename):
         """
         This method outputs file "output.html" with svg drawing of network.
         """
-        assert self.__stage == 2
+        assert self.__stage == 3
         with open(filename, "w") as file:
             file.write("<html><head><title>Network representation</title></head><body>")
             file.write("<svg width='{0}' height='{1}'>\n".format(
@@ -240,25 +276,3 @@ class Constructor(object):
                             style='stroke: rgb({4}, 0, {5}); stroke-width:{6}'/>\n".format(
                                 xi, yi, xj, yj, int(alpha*255), int((1-alpha)*255), width*5))
             file.write("</svg></body></html>")
-
-    def save_network(self, filename):
-        with open(filename, "w") as outfile:
-            outvalues = {
-                "horizontals": self.__horizontals,
-                "verticals": self.__verticals,
-                "nodes": self.__nodes,
-                "adjacency": self.__adjacency.tolist(),
-                "modified_adjacency": self.__modified_adjacency,
-                "positions": self.__positions.tolist(),
-                "stage": self.__stage
-                }
-            json.dump(outvalues, outfile)
-
-    def open_network(self, invalues):
-        self.__horizontals = invalues["horizontals"]
-        self.__verticals = invalues["verticals"]
-        self.__nodes = invalues["nodes"]
-        self.__adjacency = np.array(invalues["adjacency"])
-        self.__modified_adjacency = invalues["modified_adjacency"]
-        self.__positions = np.array(invalues["positions"])
-        self.__stage = invalues["stage"]

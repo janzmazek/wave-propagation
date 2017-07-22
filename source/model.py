@@ -12,14 +12,39 @@ from source.junction import Junction
 
 class Model(object):
     """docstring for Model."""
-    def __init__(self, modified_adjacency):
+    def __init__(self):
+        self.__modified_adjacency = None
+        self.__nodes = None
+        self.__graph = None
+        self.__source = None
+        self.__receiver = None
+        self.__threshold = None
+
+    def set_adjacency(self, modified_adjacency):
         self.__modified_adjacency = modified_adjacency
         self.__nodes = len(modified_adjacency)
         self.__graph = nx.from_numpy_matrix(self.__create_adjacency())
-        self.__source = None
-        self.__distance_from_source = None
-        self.__receiver = None
-        self.__distance_from_receiver = None
+
+    def set_source(self, source1, source2):
+        """
+        This setter method sets source node.
+        """
+        self.__source = (source1, source2)
+
+    def set_receiver(self, receiver1, receiver2):
+        """
+        This setter method sets receiver node.
+        """
+        self.__receiver = (receiver1, receiver2)
+
+    def set_threshold(self, threshold):
+        self.__threshold = threshold
+
+    def get_source(self):
+        if self.__source is not None:
+            return self.__source
+        else:
+            raise ValueError("Source not set.")
 
     def __create_adjacency(self):
         """
@@ -33,28 +58,14 @@ class Model(object):
                     adjacency[i][j] = 1
         return adjacency
 
-    def set_source(self, source1, source2):
-        """
-        This setter method sets source node.
-        TODO: input coordinates, find closest node, set node
-        """
-        self.__source = (source1, source2)
-
-    def set_receiver(self, receiver1, receiver2):
-        """
-        This setter method sets receiver node.
-        TODO: input coordinates, find closest node, set node
-        """
-        self.__receiver = (receiver1, receiver2)
-
-    def solve(self, treshold):
+    def solve(self):
         """
         This method is the main method of the class and it solves the wave
         propagation problem. Treshold specifies length additional to the
         shortest path length.
         """
-        assert self.__source is not None and self.__receiver is not None
-        paths = self.__compute_paths(treshold) # obtain all connecting paths
+        assert self.__source is not None and self.__receiver is not None and self.__threshold is not None
+        paths = self.__compute_paths() # obtain all connecting paths
         power = 0
         error = 0
         for path in paths:
@@ -67,7 +78,7 @@ class Model(object):
             self.__source, self.__receiver, power, error))
         return power # resulting power flow
 
-    def __compute_paths(self, treshold):
+    def __compute_paths(self):
         """
         This private method computes all paths between source and receiver.
         """
@@ -79,7 +90,7 @@ class Model(object):
                 lengths.append(nx.shortest_path_length(self.__graph, source, receiver))
         # Find minimal length and compute cutoff
         shortest_length = min(lengths)
-        cutoff = shortest_length + treshold
+        cutoff = shortest_length + self.__threshold
 
         # Find all paths of lengths up to cutoff of all four combinations
         for source in self.__source:

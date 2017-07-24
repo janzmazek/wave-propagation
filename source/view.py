@@ -8,12 +8,12 @@ from source.components.menu import Menu
 from source.components.canvas import Canvas
 from source.components.tools import *
 
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 640
+HEIGHT = 480
 SCALE = 1.5
 LARGE_FONT=("Verdana", 12)
 FRAME_OPTIONS = {"bd":2, "relief":"ridge", "padx":10}
-CANVAS_BACKGROUND = "indian red"
+CANVAS_BACKGROUND = "salmon"
 
 class View(tk.Tk):
     """docstring for View."""

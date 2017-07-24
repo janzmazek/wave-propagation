@@ -1,12 +1,13 @@
 import tkinter as tk
 
-DEFAULT_DIMENSION = 5
+DEFAULT_HORIZONTALS = 4
+DEFAULT_VERTICALS = 6
 DEFAULT_LENGTH = 100
 DEFAULT_WIDTH = 10
-DEFAULT_ALPHA = 0.5
+DEFAULT_ALPHA = 0.1
 DEFAULT_THRESHOLD = 2
 
-ENTRY_WIDTH = 3
+ENTRY_WIDTH = 4
 PADX = 10
 
 class CreationTools(tk.LabelFrame):
@@ -15,7 +16,7 @@ class CreationTools(tk.LabelFrame):
         self.view = view
 
         horizontals_label = tk.Label(self,
-                                     text="Horizontal streets [{0}]:".format(DEFAULT_DIMENSION),
+                                     text="Horizontal streets [{0}]:".format(DEFAULT_HORIZONTALS),
                                      padx=PADX
                                      )
         horizontals_label.pack(side=tk.LEFT)
@@ -24,7 +25,7 @@ class CreationTools(tk.LabelFrame):
         self.horizontals_entry.pack(side=tk.LEFT)
 
         verticals_label = tk.Label(self,
-                                   text="Vertical streets [{0}]:".format(DEFAULT_DIMENSION),
+                                   text="Vertical streets [{0}]:".format(DEFAULT_VERTICALS),
                                    padx=PADX
                                    )
         verticals_label.pack(side=tk.LEFT)
@@ -53,16 +54,13 @@ class CreationTools(tk.LabelFrame):
         """
         horizontals = self.horizontals_entry.get()
         if horizontals == '':
-            horizontals = DEFAULT_DIMENSION
-        horizontals = int(horizontals)
+            horizontals = DEFAULT_HORIZONTALS
         verticals = self.verticals_entry.get()
         if verticals == '':
-            verticals = DEFAULT_DIMENSION
-        verticals = int(verticals)
+            verticals = DEFAULT_VERTICALS
         initial_length = self.initial_length_entry.get()
         if initial_length == '':
             initial_length = DEFAULT_LENGTH
-        initial_length = int(initial_length)
 
         self.view.controller.done_creating(horizontals, verticals, initial_length)
 
@@ -135,19 +133,9 @@ class ModifyingTools(tk.LabelFrame):
         width = self.width_entry.get()
         if width == '':
             width = DEFAULT_WIDTH
-        width = float(width)
         alpha = self.alpha_entry.get()
         if alpha == '':
             alpha = DEFAULT_ALPHA
-        alpha = float(alpha)
-        if width < 0:
-            self.view.show_message("Error", "Width must be a positive number.")
-            raise ValueError("Width must be a positive number.")
-
-        if alpha < 0 or alpha > 1:
-            self.view.show_message("Error",
-                "Absorption coefficient must be between 0 and 1")
-            raise ValueError("Absorption coefficient must be between 0 and 1")
         self.view.controller.done_modifying(width, alpha)
 
 class CustomisingTools(tk.LabelFrame):
@@ -189,11 +177,9 @@ class CustomisingTools(tk.LabelFrame):
         width = self.width_entry.get()
         if width == '':
             width = DEFAULT_WIDTH
-        width = float(width)
         alpha = self.alpha_entry.get()
         if alpha == '':
             alpha = DEFAULT_ALPHA
-        alpha = float(alpha)
 
         self.view.controller.customise_click(width, alpha)
 
@@ -244,34 +230,11 @@ class ModelTools(tk.LabelFrame):
     def compute_click(self):
         starting_1 = self.starting_entry_1.get()
         starting_2 = self.starting_entry_2.get()
-        if starting_1 == '':
-            starting_1 = False
-            self.view.show_message("Error", "Fill source node 1.")
-            raise ValueError("Fill source node 1.")
-        if starting_2 == '':
-            starting_2 = False
-            self.view.show_message("Error", "Fill source node 2.")
-            raise ValueError("Fill source node 2.")
-        starting_1 = int(starting_1)
-        starting_2 = int(starting_2)
-
         ending_1 = self.ending_entry_1.get()
         ending_2 = self.ending_entry_2.get()
-        if ending_1 == '':
-            ending_1 = False
-            self.view.show_message("Error", "Fill receiver node 1.")
-            raise ValueError("Fill receiver node 1.")
-        if ending_2 == '':
-            ending_2 = False
-            self.view.show_message("Error", "Fill receiver node 2.")
-            raise ValueError("Fill receiver node 2.")
-        ending_1 = int(ending_1)
-        ending_2 = int(ending_2)
-
         threshold = self.threshold_entry.get()
         if threshold == '':
             threshold = 2
-        threshold = int(threshold)
         self.view.controller.compute_click(starting_1,
                                            starting_2,
                                            ending_1,

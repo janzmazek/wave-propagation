@@ -15,7 +15,11 @@ class Controller(object):
         self.selected = False
 
     def done_creating(self, horizontals, verticals, length):
-        self.constructor.set_grid(horizontals, verticals, length)
+        try:
+            self.constructor.set_grid(horizontals, verticals, length)
+        except ValueError as e:
+            self.view.show_message("Error", e)
+            return
         self.view.switch_tools("MovingTools")
         self.view.refresh_canvas(self.constructor.get_adjacency(),
                                  self.constructor.get_positions(),
@@ -25,7 +29,7 @@ class Controller(object):
     def click_to_move(self, endpoints, offset):
         if not endpoints:
             self.click_endpoints = False
-            print("You misclicked")
+            print("You misclicked.")
             return
         self.click_endpoints = (endpoints, offset)
 
@@ -35,7 +39,8 @@ class Controller(object):
             self.release_point = False
             return
         self.release_point = endpoint
-        self.move()
+        if self.click_endpoints:
+            self.move()
 
     def move(self):
         start_line = self.find_line_properties(*self.click_endpoints)
@@ -118,8 +123,12 @@ class Controller(object):
         self.view.remove_binds()
 
     def done_modifying(self, width, alpha):
+        try:
+            self.constructor.modify_adjacency(width, alpha)
+        except ValueError as e:
+            self.view.show_message("Error", e)
+            return
         self.view.switch_tools("CustomisingTools")
-        self.constructor.modify_adjacency(width, alpha)
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
                                  modified=True
@@ -140,15 +149,12 @@ class Controller(object):
         if not self.selected:
             self.view.show_message("Error", "Nothing selected.")
             return
-        if width is not False and width < 0:
-            self.view.show_message("Error", "Width must be a positive number.")
-            raise ValueError("Width must be a positive number.")
-        if alpha is not False and (alpha < 0 or alpha > 1):
-            self.view.show_message("Error",
-                "Absorption coefficient must be between 0 and 1")
-            raise ValueError("Absorption coefficient must be between 0 and 1")
-        self.constructor.change_width(*self.selected, width)
-        self.constructor.change_alpha(*self.selected, alpha)
+        try:
+            self.constructor.change_width(*self.selected, width)
+            self.constructor.change_alpha(*self.selected, alpha)
+        except ValueError as e:
+            self.view.show_message("Error", e)
+            return
         self.selected = False
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
@@ -166,12 +172,18 @@ class Controller(object):
                                  )
 
     def compute_click(self, starting_1, starting_2, ending_1, ending_2, threshold):
-        self.model.set_source(starting_1, starting_2)
-        self.model.set_receiver(ending_1, ending_2)
-        self.model.set_threshold(threshold)
         self.model.set_adjacency(self.constructor.get_modified_adjacency())
-        power = self.model.solve()
-        self.view.show_message("Result", "Power percentage: {0}".format(power))
+        try:
+            self.model.set_source(starting_1, starting_2)
+            self.model.set_receiver(ending_1, ending_2)
+            self.model.set_threshold(threshold)
+            (power, error) = self.model.solve()
+        except ValueError as e:
+            self.view.show_message("Error", e)
+            return
+        power = format(power*100,  '.3f')
+        error = format(error*100, '.3f')
+        self.view.show_message("Result", "Power: {0} % ± {1} %".format(power, error))
 
     def compute_all_click(self, starting_1, starting_2, threshold):
         self.model.set_source(starting_1, starting_2)

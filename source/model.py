@@ -29,15 +29,43 @@ class Model(object):
         """
         This setter method sets source node.
         """
+        try:
+            source1 = int(source1)
+            source2 = int(source2)
+        except ValueError:
+            raise ValueError("Source nodes must be integers.")
+        if source1 < 0 or source1 > self.__nodes:
+            raise ValueError("First source node not in range.")
+        if source2 < 0 or source2 > self.__nodes:
+            raise ValueError("Second source node not in range.")
+        if source2 not in self.__graph.neighbors(source1):
+            raise ValueError("Sources are not neighbours.")
         self.__source = (source1, source2)
 
     def set_receiver(self, receiver1, receiver2):
         """
         This setter method sets receiver node.
         """
+        try:
+            receiver1 = int(receiver1)
+            receiver2 = int(receiver2)
+        except ValueError:
+            raise ValueError("Receiver nodes must be integers.")
+        if receiver1 < 0 or receiver1 > self.__nodes:
+            raise ValueError("First receiver node not in range.")
+        if receiver2 < 0 or receiver2 > self.__nodes:
+            raise ValueError("Second receiver node not in range.")
+        if receiver2 not in self.__graph.neighbors(receiver1):
+            raise ValueError("Receivers are not neighbours.")
         self.__receiver = (receiver1, receiver2)
 
     def set_threshold(self, threshold):
+        try:
+            threshold = int(threshold)
+        except ValueError:
+            raise ValueError("Threshold must be an integer.")
+        if threshold < 0:
+            raise ValueError("Threshold must be a positive number.")
         self.__threshold = threshold
 
     def get_source(self):
@@ -76,7 +104,7 @@ class Model(object):
         print("==========================================")
         print("Resulting power from node {0} to node {1} is {2} (error {3})".format(
             self.__source, self.__receiver, power, error))
-        return power # resulting power flow
+        return (power, error) # resulting power flow
 
     def __compute_paths(self):
         """

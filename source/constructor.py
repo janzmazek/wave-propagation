@@ -21,6 +21,18 @@ class Constructor(object):
         self.__stage = 0
 
     def set_grid(self, horizontals, verticals, length=100):
+        try:
+            horizontals = int(horizontals)
+            verticals = int(verticals)
+        except ValueError:
+            raise ValueError("Horizontals and verticals must be integers.")
+        try:
+            length = float(length)
+        except ValueError:
+            raise ValueError("Length must be a floating point number.")
+        for quantity in [horizontals, verticals, length]:
+            if quantity < 0:
+                raise ValueError("Horizontals, verticals and length must be positive numbers.")
         self.__horizontals = horizontals
         self.__verticals = verticals
         self.__nodes = horizontals*verticals
@@ -138,6 +150,15 @@ class Constructor(object):
         """
         if self.__stage == 1 or self.__stage == 2:
             self.__stage = 3
+        try:
+            width = float(width)
+            alpha = float(alpha)
+        except ValueError:
+            raise ValueError("Width and absorption must be floating point numbers.")
+        if width < 0:
+            raise ValueError("Width must be a positive number.")
+        if alpha < 0 or alpha > 1:
+            raise ValueError("Absorption must be a number between 0 and 1.")
         assert self.__stage == 3
         self.__modified_adjacency = self.__adjacency.tolist() # To python structure
         for i in range(self.__nodes):
@@ -183,7 +204,12 @@ class Constructor(object):
         This method changes the street width of street (i, j).
         """
         assert self.__stage == 3
-        assert width > 0
+        try:
+            width = float(width)
+        except ValueError:
+            raise ValueError("Width must be a floating point number.")
+        if width < 0:
+            raise ValueError("Width must be a positive number.")
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] is not 0:
                 self.__modified_adjacency[i][j]["width"] = width
@@ -198,7 +224,12 @@ class Constructor(object):
         This method changes the absorption coefficient of street (i, j).
         """
         assert self.__stage == 3
-        assert alpha >= 0 and alpha <= 1
+        try:
+            alpha = float(alpha)
+        except ValueError:
+            raise ValueError("Absorption must be a floating point number.")
+        if alpha < 0 or alpha > 1:
+            raise ValueError("Absorption must be a number between 0 and 1")
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] != 0:
                 self.__modified_adjacency[i][j]["alpha"] = alpha

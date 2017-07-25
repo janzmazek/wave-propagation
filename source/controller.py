@@ -12,7 +12,9 @@ class Controller(object):
         # canvas bind variables
         self.click_endpoints = False
         self.release_point = False
+        self.modified = False
         self.selected = False
+        self.numbered = False
 
     def done_creating(self, horizontals, verticals, length):
         try:
@@ -23,7 +25,7 @@ class Controller(object):
         self.view.switch_tools("MovingTools")
         self.view.refresh_canvas(self.constructor.get_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=False
+                                 modified=self.modified
                                  )
 
     def click_to_move(self, endpoints, offset):
@@ -100,7 +102,7 @@ class Controller(object):
         self.view.switch_tools("DeletingTools")
         self.view.refresh_canvas(self.constructor.get_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=False
+                                 modified=self.modified
                                  )
 
     def click_to_delete(self, endpoints, offset):
@@ -111,14 +113,14 @@ class Controller(object):
         self.constructor.delete_connection(*nodes)
         self.view.refresh_canvas(self.constructor.get_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=False
+                                 modified=self.modified
                                  )
 
     def done_deleting(self):
         self.view.switch_tools("ModifyingTools")
         self.view.refresh_canvas(self.constructor.get_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=False
+                                 modified=self.modified
                                  )
         self.view.remove_binds()
 
@@ -129,9 +131,10 @@ class Controller(object):
             self.view.show_message("Error", e)
             return
         self.view.switch_tools("CustomisingTools")
+        self.modified = True
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=True
+                                 modified=self.modified
                                  )
 
     def click_to_select(self, endpoints, offset):
@@ -141,7 +144,7 @@ class Controller(object):
             self.selected = self.find_nodes(endpoints, offset)
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=True,
+                                 modified=self.modified,
                                  selected=self.selected
                                  )
 
@@ -158,17 +161,18 @@ class Controller(object):
         self.selected = False
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=True,
+                                 modified=self.modified,
                                  selected=self.selected
                                  )
     def done_customising(self):
         self.view.switch_tools("ModelTools")
         self.selected = False
+        self.numbered = True
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
-                                 modified=True,
+                                 modified=self.modified,
                                  selected=self.selected,
-                                 numbered=True
+                                 numbered=self.numbered
                                  )
 
     def compute_click(self, starting_1, starting_2, ending_1, ending_2, threshold):
@@ -181,15 +185,28 @@ class Controller(object):
         except ValueError as e:
             self.view.show_message("Error", e)
             return
-        power = format(power*100,  '.3f')
+        power = format(power*100, '.3f')
         error = format(error*100, '.3f')
         self.view.show_message("Result", "Power: {0} % ± {1} %".format(power, error))
 
     def compute_all_click(self, starting_1, starting_2, threshold):
-        self.model.set_source(starting_1, starting_2)
-        self.model.set_threshold(threshold)
-        plotter = Plotter(self.constructor, self.model)
-        plotter.plot("result.png")
+        self.model.set_adjacency(self.constructor.get_modified_adjacency())
+        try:
+            self.model.set_source(starting_1, starting_2)
+            self.model.set_threshold(threshold)
+        except ValueError as e:
+            self.view.show_message("Error", e)
+            return
+        self.view.show_filedialog("data")
+
+    def compute_data(self, filename):
+        (X, Y, Z) = self.model.compute_data()
+        with open(filename, "w") as file:
+            file.write(str(X))
+            file.write(str(Y))
+            file.write(str(Z))
+
+
 
 
     def import_network(self, filename):
@@ -199,20 +216,12 @@ class Controller(object):
         self.constructor.import_network(invalues)
         if modified_adjacency is None:
             self.view.switch_tools("ModifyingTools")
-            self.view.refresh_canvas(self.constructor.get_adjacency(),
-                                     self.constructor.get_positions(),
-                                     modified=False
-                                     )
+            self.modified = False
             self.view.remove_binds()
-            self.view.add_bind("ModifyingTools")
         else:
             self.view.switch_tools("ModelTools")
-            self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
-                                     self.constructor.get_positions(),
-                                     modified=True,
-                                     selected=self.selected,
-                                     numbered=True
-                                     )
+            self.modified = True
+            self.numbered = True
             self.view.remove_binds()
 
     def export_network(self, filename):
@@ -224,7 +233,20 @@ class Controller(object):
     def file_click(self, option):
         if option in ["export", "svg"] and self.constructor.get_stage() == 0:
             return
-        self.view.show_filedialog(option)
+        if option == "remove_background":
+            self.view.canvas.remove_background()
+        else:
+            self.view.show_filedialog(option)
+        if self.modified:
+            adjacency = self.constructor.get_modified_adjacency()
+        else:
+            adjacency = self.constructor.get_adjacency()
+        self.view.refresh_canvas(adjacency,
+                                 self.constructor.get_positions(),
+                                 modified=self.modified,
+                                 selected=self.selected,
+                                 numbered=self.numbered
+                                 )
 
     def window_click(self, option):
         self.view.resize_window(option)
@@ -234,21 +256,26 @@ class Controller(object):
             return
         if option in ["CreationTools", "MovingTools", "DeletingTools", "ModifyingTools"]:
             self.constructor.unmodify_adjacency()
+            self.modified, self.numbered = False, False
+            if option in ["CreationTools", "MovingTools"]:
+                self.constructor.set_grid(self.constructor.get_horizontals(),
+                                          self.constructor.get_verticals()
+                                          )
             self.view.switch_tools(option)
-            modified = False
         elif option == "CustomisingTools":
             if self.constructor.get_modified_adjacency() == None:
-                modified = False
+                self.modified = False
                 self.view.switch_tools("ModifyingTools")
             else:
+                self.modified = True
                 self.view.switch_tools(option)
-                modified = True
-        if modified:
+        if self.modified:
             adjacency = self.constructor.get_modified_adjacency()
         else:
             adjacency = self.constructor.get_adjacency()
         positions = self.constructor.get_positions()
-        self.view.refresh_canvas(adjacency, positions, modified)
+        self.view.refresh_canvas(adjacency, positions, self.modified)
 
     def about_click(self):
         self.view.show_message("About", "Hello")
+        return

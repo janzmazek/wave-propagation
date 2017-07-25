@@ -1,4 +1,5 @@
 import tkinter as tk
+from PIL import ImageTk
 
 OFFSET = 20
 
@@ -6,12 +7,21 @@ class Canvas(tk.Canvas):
     def __init__(self, view, *args, **kwargs):
         super(Canvas, self).__init__(*args, **kwargs)
         self.view = view
-        self.movement = None
 
+        self.background_image = False
+
+    def set_background(self, filename):
+        self.background_image = ImageTk.PhotoImage(file=filename)
+
+    def remove_background(self):
+        self.background_image = False
 
     def refresh_canvas(self, adjacency, positions, modified, selected, numbered):
         self.delete("all")
-        self.draw_streets(adjacency, positions, modified)
+        if self.background_image:
+            self.create_image(0, 0, image=self.background_image, anchor='nw', tags="background")
+        if adjacency is not None and positions is not None:
+            self.draw_streets(adjacency, positions, modified)
         if selected:
             self.select_street(positions, selected)
         if numbered:
@@ -90,11 +100,12 @@ class Canvas(tk.Canvas):
         This method is triggered when left mouse button is clicked.
         """
         canvas = event.widget
-        line = canvas.find_withtag("current")
-        if not line:
+        handle = canvas.find_withtag("current") # returns tuple of handle
+        tag = canvas.gettags("current") # returns tuple of tags ("current", "background")
+        if not handle or "background" in tag:
             self.view.controller.click_to_move(False, False)
             return
-        coordinates = canvas.coords(line)
+        coordinates = canvas.coords(handle)
         endpoints = (coordinates[0:2], coordinates[2:4])
         self.view.controller.click_to_move(endpoints, OFFSET)
 
@@ -103,9 +114,10 @@ class Canvas(tk.Canvas):
         This method is triggered when left mouse button is released.
         """
         canvas = event.widget
-        line = canvas.find_withtag("current")
-        if line:
-            self.view.controler.release_to_move(False)
+        handle = canvas.find_withtag("current")
+        tag = canvas.gettags("current")
+        if handle and "background" not in tag:
+            self.view.controller.release_to_move(False)
             return
         endpoints = (event.x, event.y)
         self.view.controller.release_to_move(endpoints)
@@ -115,20 +127,22 @@ class Canvas(tk.Canvas):
         This method is triggered when left mouse button is clicked.
         """
         canvas = event.widget
-        line = canvas.find_withtag("current")
-        if not line:
+        handle = canvas.find_withtag("current")
+        tag = canvas.gettags("current")
+        if not handle or "background" in tag:
             self.view.controller.click_to_delete(False, False)
             return
-        coordinates = canvas.coords(line)
+        coordinates = canvas.coords(handle)
         endpoints = (coordinates[0:2], coordinates[2:4])
         self.view.controller.click_to_delete(endpoints, OFFSET)
 
     def click_to_select(self, event):
         canvas = event.widget
-        line = canvas.find_withtag("current")
-        if not line:
+        handle = canvas.find_withtag("current")
+        tag = canvas.gettags("current")
+        if not handle or "background" in tag:
             self.view.controller.click_to_select(False, False)
             return
-        coordinates = canvas.coords(line)
+        coordinates = canvas.coords(handle)
         endpoints = (coordinates[0:2], coordinates[2:4])
         self.view.controller.click_to_select(endpoints, OFFSET)

@@ -22,14 +22,20 @@ class Menu(tk.Menu):
         self.add_help_menu()
 
     def add_file_menu(self):
-        self.file_menu.add_command(label="Import",
+        self.file_menu.add_command(label="Import network",
                                    command=lambda: self.view.controller.file_click("import")
                                    )
-        self.file_menu.add_command(label="Export",
+        self.file_menu.add_command(label="Export network",
                                    command=lambda: self.view.controller.file_click("export")
                                    )
         self.file_menu.add_command(label="Save image",
                                    command=lambda: self.view.controller.file_click("svg")
+                                   )
+        self.file_menu.add_command(label="Set background",
+                                   command=lambda: self.view.controller.file_click("set_background"),
+                                   )
+        self.file_menu.add_command(label="Remove background",
+                                   command=lambda: self.view.controller.file_click("remove_background"),
                                    )
 
     def add_window_menu(self):
@@ -44,8 +50,11 @@ class Menu(tk.Menu):
                                      )
 
     def add_tools_menu(self):
-        self.tools_menu.add_command(label="Create newtork",
+        self.tools_menu.add_command(label="Create network",
                                     command=lambda: self.view.controller.tools_click("CreationTools")
+                                    )
+        self.tools_menu.add_command(label="Move streets",
+                                    command=lambda: self.view.controller.tools_click("MovingTools")
                                     )
         self.tools_menu.add_command(label="Delete street",
                                     command=lambda: self.view.controller.tools_click("DeletingTools")

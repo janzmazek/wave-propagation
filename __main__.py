@@ -3,6 +3,7 @@ from source.model import Model
 from source.view import View
 from source.controller import Controller
 
+
 if __name__ == '__main__':
     constructor = Constructor()
     model = Model()

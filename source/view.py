@@ -25,7 +25,7 @@ class View(tk.Tk):
         self.menu = Menu(self)
         self.config(menu=self.menu)
 
-        self.canvas = Canvas(self, height=400, bg=CANVAS_BACKGROUND)
+        self.canvas = Canvas(self, height=100, width=WIDTH, bg=CANVAS_BACKGROUND)
         self.canvas.pack(fill=tk.BOTH, expand=tk.YES)
 
         self.toolbar = CreationTools(self, **FRAME_OPTIONS)
@@ -82,13 +82,13 @@ class View(tk.Tk):
         messagebox.showinfo(title, message)
 
     def show_filedialog(self, option):
-        if option=="import":
+        if option == "import":
             filename = filedialog.askopenfilename()
             if filename is None:
                 return
             self.controller.import_network(filename)
 
-        elif option=="export":
+        elif option == "export":
             filename = filedialog.asksaveasfile(mode='w',
                                                 defaultextension=".json"
                                                 )
@@ -96,13 +96,27 @@ class View(tk.Tk):
                 return
             self.controller.export_network(filename.name)
 
-        elif option=="svg":
+        elif option == "svg":
             filename = filedialog.asksaveasfile(mode='w',
                                                 defaultextension=".html"
                                                 )
             if filename is None:
                 return
-            self.constructor.export_network(filename.name)
+            self.controller.constructor.draw_network(filename.name)
+
+        elif option == "set_background":
+            filename = filedialog.askopenfilename()
+            if filename is None:
+                return
+            self.canvas.set_background(filename)
+
+        elif option == "data":
+            filename = filedialog.asksaveasfile(mode='w',
+                                                defaultextension=".txt"
+                                                )
+            if filename is None:
+                return
+            self.controller.compute_data(filename.name)
 
     def resize_window(self, option):
         if option == "small":

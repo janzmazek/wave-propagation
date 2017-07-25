@@ -262,3 +262,6 @@ class Model(object):
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)
         print("Contribution from path {0}: {1} (error {2})".format(path, integral, error))
         return (integral, error)
+
+    def compute_data(self):
+        return (True, True, True)

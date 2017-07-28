@@ -23,13 +23,13 @@ class Menu(tk.Menu):
 
     def add_file_menu(self):
         self.file_menu.add_command(label="Import network",
-                                   command=lambda: self.view.controller.file_click("import")
+                                   command=lambda: self.view.controller.file_click("import_network")
                                    )
         self.file_menu.add_command(label="Export network",
-                                   command=lambda: self.view.controller.file_click("export")
+                                   command=lambda: self.view.controller.file_click("export_network")
                                    )
-        self.file_menu.add_command(label="Save image",
-                                   command=lambda: self.view.controller.file_click("svg")
+        self.file_menu.add_command(label="Draw network",
+                                   command=lambda: self.view.controller.file_click("draw_network")
                                    )
         self.file_menu.add_command(label="Set background",
                                    command=lambda: self.view.controller.file_click("set_background"),

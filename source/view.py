@@ -8,12 +8,11 @@ from source.components.menu import Menu
 from source.components.canvas import Canvas
 from source.components.tools import *
 
-WIDTH = 640
-HEIGHT = 480
+WIDTH = 1000
+HEIGHT = 600
 SCALE = 1.5
-LARGE_FONT=("Verdana", 12)
-FRAME_OPTIONS = {"bd":2, "relief":"ridge", "padx":10}
-CANVAS_BACKGROUND = "salmon"
+CANVAS_BACKGROUND = "cadet blue"
+FRAME_OPTIONS = {"padx":10}
 
 class View(tk.Tk):
     """docstring for View."""
@@ -81,42 +80,13 @@ class View(tk.Tk):
     def show_message(self, title, message):
         messagebox.showinfo(title, message)
 
-    def show_filedialog(self, option):
-        if option == "import":
-            filename = filedialog.askopenfilename()
-            if filename is None:
-                return
-            self.controller.import_network(filename)
+    def save_as(self, extension):
+        filename = filedialog.asksaveasfile(mode='w', defaultextension=extension)
+        return filename.name
 
-        elif option == "export":
-            filename = filedialog.asksaveasfile(mode='w',
-                                                defaultextension=".json"
-                                                )
-            if filename is None: # If dialog closed with "cancel".
-                return
-            self.controller.export_network(filename.name)
-
-        elif option == "svg":
-            filename = filedialog.asksaveasfile(mode='w',
-                                                defaultextension=".html"
-                                                )
-            if filename is None:
-                return
-            self.controller.constructor.draw_network(filename.name)
-
-        elif option == "set_background":
-            filename = filedialog.askopenfilename()
-            if filename is None:
-                return
-            self.canvas.set_background(filename)
-
-        elif option == "data":
-            filename = filedialog.asksaveasfile(mode='w',
-                                                defaultextension=".txt"
-                                                )
-            if filename is None:
-                return
-            self.controller.compute_data(filename.name)
+    def open(self):
+        filename = filedialog.askopenfilename()
+        return filename
 
     def resize_window(self, option):
         if option == "small":

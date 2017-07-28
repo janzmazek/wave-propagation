@@ -25,7 +25,9 @@ class Junction(object):
 
     def __define_junction(self, widths):
         junction_size = len(widths) - 1 # number of intersecting streets
-        if junction_size == 2:
+        if junction_size == 1:
+            self.__junction == "dead-end"
+        elif junction_size == 2:
             self.__junction = "bend"
         elif junction_size == 3:
             if "left" in widths and "right" in widths:
@@ -42,7 +44,9 @@ class Junction(object):
         This method returns lambda function for a given junction based on
         street widths and junction type.
         """
-        if self.__junction == "bend":
+        if self.__junction == "dead-end":
+            return lambda theta: 1
+        elif self.__junction == "bend":
             if self.__next == "backward":
                 return lambda theta: self.__crossing(theta, self.__ratio)
             else:
@@ -73,7 +77,9 @@ class Junction(object):
         on street widths and junction type.
         """
         # TODO implement this
-        if self.__junction == "bend":
+        if self.__junction == "dead-end":
+            pass
+        elif self.__junction == "bend":
             return np.arctan(1/self.__ratio)
         elif self.__junction == "t-junction":
             return np.arctan(0.5/self.__ratio)

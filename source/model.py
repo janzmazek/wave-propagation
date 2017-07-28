@@ -3,7 +3,6 @@ This module performs probabilistic model on some network of streets given by
 the modified adjacency matrix (with dictionary of length, width, alpha,
 orientation).
 """
-#from collections import defaultdict
 import numpy as np
 import scipy.integrate as integrate
 import networkx as nx
@@ -258,10 +257,48 @@ class Model(object):
                 complete = complete * (1-alphas[i])**(lengths[i]/widths[i]*np.tan(theta)) \
                     *functions[i-1](theta)
             return complete
+            # Thesis page 85 - add /cos and 1/width
 
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)
         print("Contribution from path {0}: {1} (error {2})".format(path, integral, error))
         return (integral, error)
 
-    def compute_data(self):
-        return (True, True, True)
+    def compute_data(self, positions):
+        receivers = self.__get_receivers()
+        powers = []
+        for receiver in receivers:
+            self.set_receiver(*receiver) # * unpacks tuple
+            powers.append(self.solve())
+
+        receiver_positions = self.__get_positions(receivers, positions)
+        source_position = self.__get_positions([self.__source], positions)
+
+        X = [element[0] for element in receiver_positions]
+        Y = [element[1] for element in receiver_positions]
+        Z = [element[0] for element in powers]
+
+        X.append(source_position[0][0])
+        Y.append(source_position[0][1])
+        Z.append(1)
+
+        return (X, Y, Z)
+
+    def __get_receivers(self):
+        receivers = []
+        for j in range(len(self.__modified_adjacency)):
+            for i in range(j):
+                if self.__modified_adjacency[i][j] != 0:
+                    if self.__source != (i,j) and self.__source != (j,i):
+                        receivers.append((i,j))
+        return receivers
+
+    def __get_positions(self, streets, positions):
+        center_positions = []
+        for street in streets:
+            x1, y1 = positions[street[0]][0], positions[street[0]][1]
+            x2, y2 = positions[street[1]][0], positions[street[1]][1]
+            if x1 == x2:
+                center_positions.append((x1, (y1+y2)/2))
+            elif y1 == y2:
+                center_positions.append(((x1+x2)/2, y1))
+        return center_positions

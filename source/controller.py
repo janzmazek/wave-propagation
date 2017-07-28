@@ -45,7 +45,7 @@ class Controller(object):
             self.move()
 
     def move(self):
-        start_line = self.find_line_properties(*self.click_endpoints)
+        start_line = self.__find_line_properties(*self.click_endpoints)
         (end_x, end_y) = self.release_point
         start_index = start_line["line_index"]
         start = start_line["start"]
@@ -63,8 +63,8 @@ class Controller(object):
                                  )
 
 
-    def find_line_properties(self, endpoints, offset):
-        (node1, node2) = self.find_nodes(endpoints, offset)
+    def __find_line_properties(self, endpoints, offset):
+        (node1, node2) = self.__find_nodes(endpoints, offset)
         verticals = self.constructor.get_verticals()
         positions = self.constructor.get_positions()
         if positions[node1][0] == positions[node2][0]:
@@ -82,7 +82,7 @@ class Controller(object):
                 "line_index": line_index
                 }
 
-    def find_nodes(self, endpoints, offset):
+    def __find_nodes(self, endpoints, offset):
         node1, node2 = None, None
         (point1, point2) = endpoints
         counter = 0
@@ -109,7 +109,7 @@ class Controller(object):
         if not endpoints:
             print("You misclicked")
             return
-        nodes = self.find_nodes(endpoints, offset)
+        nodes = self.__find_nodes(endpoints, offset)
         self.constructor.delete_connection(*nodes)
         self.view.refresh_canvas(self.constructor.get_adjacency(),
                                  self.constructor.get_positions(),
@@ -141,7 +141,7 @@ class Controller(object):
         if not endpoints:
             self.selected = False
         else:
-            self.selected = self.find_nodes(endpoints, offset)
+            self.selected = self.__find_nodes(endpoints, offset)
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
                                  modified=self.modified,
@@ -197,19 +197,54 @@ class Controller(object):
         except ValueError as e:
             self.view.show_message("Error", e)
             return
-        self.view.show_filedialog("data")
+        results = self.model.compute_data(self.constructor.get_positions())
+        filename = self.view.save_as(".html")
+        if filename is None:
+            return
+        self.constructor.draw_network(filename, results)
 
-    def compute_data(self, filename):
-        (X, Y, Z) = self.model.compute_data()
-        with open(filename, "w") as file:
-            file.write(str(X))
-            file.write(str(Y))
-            file.write(str(Z))
+    def file_click(self, option):
+        if option in ["export_network", "draw_network"] and self.constructor.get_stage() == 0:
+            return
+        if option == "import_network":
+            filename = self.view.open()
+            if filename is None:
+                return
+            self.__import_network(filename)
 
+        elif option == "export_network":
+            filename = self.view.save_as(".json")
+            if filename is None:
+                return
+            self.constructor.export_network(filename)
 
+        elif option == "draw_network":
+            filename = self.view.save_as(".html")
+            if filename is None:
+                return
+            self.constructor.draw_network(filename)
 
+        elif option == "set_background":
+            filename = self.view.open()
+            if filename is None:
+                return
+            self.view.canvas.set_background(filename)
 
-    def import_network(self, filename):
+        elif option == "remove_background":
+            self.view.canvas.remove_background()
+
+        if self.modified:
+            adjacency = self.constructor.get_modified_adjacency()
+        else:
+            adjacency = self.constructor.get_adjacency()
+        self.view.refresh_canvas(adjacency,
+                                 self.constructor.get_positions(),
+                                 modified=self.modified,
+                                 selected=self.selected,
+                                 numbered=self.numbered
+                                 )
+
+    def __import_network(self, filename):
         with open(filename, "r") as file:
             invalues = json.load(file)
         modified_adjacency = invalues["modified_adjacency"]
@@ -224,30 +259,6 @@ class Controller(object):
             self.numbered = True
             self.view.remove_binds()
 
-    def export_network(self, filename):
-        outvalues = self.constructor.export_network()
-        with open(filename, 'w') as file:
-            json.dump(outvalues, file)
-
-
-    def file_click(self, option):
-        if option in ["export", "svg"] and self.constructor.get_stage() == 0:
-            return
-        if option == "remove_background":
-            self.view.canvas.remove_background()
-        else:
-            self.view.show_filedialog(option)
-        if self.modified:
-            adjacency = self.constructor.get_modified_adjacency()
-        else:
-            adjacency = self.constructor.get_adjacency()
-        self.view.refresh_canvas(adjacency,
-                                 self.constructor.get_positions(),
-                                 modified=self.modified,
-                                 selected=self.selected,
-                                 numbered=self.numbered
-                                 )
-
     def window_click(self, option):
         self.view.resize_window(option)
 
@@ -257,7 +268,9 @@ class Controller(object):
         if option in ["CreationTools", "MovingTools", "DeletingTools", "ModifyingTools"]:
             self.constructor.unmodify_adjacency()
             self.modified, self.numbered = False, False
-            if option in ["CreationTools", "MovingTools"]:
+            if option == "CreationTools":
+                self.constructor.unset_grid()
+            elif option == "MovingTools":
                 self.constructor.set_grid(self.constructor.get_horizontals(),
                                           self.constructor.get_verticals()
                                           )

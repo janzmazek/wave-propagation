@@ -4,7 +4,7 @@ DEFAULT_HORIZONTALS = 4
 DEFAULT_VERTICALS = 6
 DEFAULT_LENGTH = 100
 DEFAULT_WIDTH = 10
-DEFAULT_ALPHA = 0.1
+DEFAULT_ALPHA = 0.04
 DEFAULT_THRESHOLD = 2
 
 ENTRY_WIDTH = 4
@@ -244,18 +244,7 @@ class ModelTools(tk.LabelFrame):
     def compute_all_click(self):
         starting_1 = self.starting_entry_1.get()
         starting_2 = self.starting_entry_2.get()
-        if starting_1 == '':
-            starting_1 = False
-            self.view.show_message("Error", "Fill source node 1.")
-            raise ValueError("Fill source node 1.")
-        if starting_2 == '':
-            starting_2 = False
-            self.view.show_message("Error", "Fill source node 2.")
-            raise ValueError("Fill source node 2.")
-        starting_1 = int(starting_1)
-        starting_2 = int(starting_2)
         threshold = self.threshold_entry.get()
         if threshold == '':
             threshold = 2
-        threshold = int(threshold)
         self.view.controller.compute_all_click(starting_1, starting_2, threshold)

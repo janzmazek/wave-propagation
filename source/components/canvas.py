@@ -2,6 +2,8 @@ import tkinter as tk
 from PIL import ImageTk
 
 OFFSET = 20
+JUNCTION_COLOUR = "slate gray"
+STREET_COLOUR = "white"
 
 class Canvas(tk.Canvas):
     def __init__(self, view, *args, **kwargs):
@@ -44,7 +46,7 @@ class Canvas(tk.Canvas):
                         fill = "#{0}00{1}".format(red, blue)
                         width = adjacency[i][j]["width"]
                     else:
-                        fill = "light slate grey"
+                        fill = STREET_COLOUR
                         width = 5
                     self.create_line(x0+OFFSET,
                                      y0+OFFSET,
@@ -72,8 +74,8 @@ class Canvas(tk.Canvas):
             circle(position[0]+OFFSET,
                    position[1]+OFFSET,
                    10,
-                   outline="gray",
-                   fill="gray",
+                   outline=JUNCTION_COLOUR,
+                   fill=JUNCTION_COLOUR,
                    width=2)
             self.create_text(position[0]+OFFSET,
                              position[1]+OFFSET,

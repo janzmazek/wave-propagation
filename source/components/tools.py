@@ -11,6 +11,7 @@ ENTRY_WIDTH = 4
 PADX = 10
 
 class CreationTools(tk.LabelFrame):
+    """This class of methods implements creation tools in the toolbar."""
     def __init__(self, view, *args, **kwargs):
         super(CreationTools, self).__init__(view, *args, text="Create grid", **kwargs)
         self.view = view
@@ -50,7 +51,7 @@ class CreationTools(tk.LabelFrame):
 
     def click(self):
         """
-        This method is executed when draw button is clicked.
+        This method is triggered when the "draw" button is clicked.
         """
         horizontals = self.horizontals_entry.get()
         if horizontals == '':
@@ -66,6 +67,7 @@ class CreationTools(tk.LabelFrame):
 
 
 class MovingTools(tk.LabelFrame):
+    """This class of methods implements moving tools in the toolbar."""
     def __init__(self, view, *args, **kwargs):
         super(MovingTools, self).__init__(view, *args, text="Move streets", **kwargs)
         self.view = view
@@ -82,9 +84,13 @@ class MovingTools(tk.LabelFrame):
         done_moving_button.pack(side=tk.LEFT)
 
     def click(self):
+        """
+        This method is triggered when the "done moving" button is clicked.
+        """
         self.view.controller.done_moving()
 
 class DeletingTools(tk.LabelFrame):
+    """This class of methods implements deleting tools in the toolbar."""
     def __init__(self, view, *args, **kwargs):
         super(DeletingTools, self).__init__(view, *args, text="Delete streets", **kwargs)
         self.view = view
@@ -101,9 +107,13 @@ class DeletingTools(tk.LabelFrame):
         done_deleting_button.pack(side=tk.LEFT)
 
     def click(self):
+        """
+        This method is triggered when the "done deleting" button is clicked.
+        """
         self.view.controller.done_deleting()
 
 class ModifyingTools(tk.LabelFrame):
+    """This class of methods implements modifying tools in the toolbar."""
     def __init__(self, view, *args, **kwargs):
         super(ModifyingTools, self).__init__(
             view, *args, text="Select default parameters for streets", **kwargs)
@@ -130,6 +140,9 @@ class ModifyingTools(tk.LabelFrame):
         modify_button.pack(side=tk.LEFT)
 
     def click(self):
+        """
+        This method is triggered when the "modify network" button is clicked.
+        """
         width = self.width_entry.get()
         if width == '':
             width = DEFAULT_WIDTH
@@ -139,6 +152,7 @@ class ModifyingTools(tk.LabelFrame):
         self.view.controller.done_modifying(width, alpha)
 
 class CustomisingTools(tk.LabelFrame):
+    """This class of methods implements customising tools in the toolbar."""
     def __init__(self, view, *args, **kwargs):
         super(CustomisingTools, self).__init__(view, *args, text="Customise streets", **kwargs)
         self.view = view
@@ -174,6 +188,9 @@ class CustomisingTools(tk.LabelFrame):
         done_customising_button.pack(side=tk.LEFT)
 
     def customise_click(self):
+        """
+        This method is triggered when the "customise" button is clicked.
+        """
         width = self.width_entry.get()
         if width == '':
             width = DEFAULT_WIDTH
@@ -184,9 +201,13 @@ class CustomisingTools(tk.LabelFrame):
         self.view.controller.customise_click(width, alpha)
 
     def done_customising(self):
+        """
+        This method is triggered when the "done customising" button is clicked.
+        """
         self.view.controller.done_customising()
 
 class ModelTools(tk.LabelFrame):
+    """This class of methods implements model tools in the toolbar."""
     def __init__(self, view, *args, **kwargs):
         super(ModelTools, self).__init__(view, *args, text="Choose model parameters", **kwargs)
         self.view = view
@@ -217,17 +238,20 @@ class ModelTools(tk.LabelFrame):
         self.threshold_entry = tk.Entry(self, width=ENTRY_WIDTH)
         self.threshold_entry.grid(row=0, column=4)
         compute_button = tk.Button(self,
-                                   text="Power",
+                                   text="Compute",
                                    command=self.compute_click
                                    )
         compute_button.grid(row=1, column=3)
         export_button = tk.Button(self,
-                                  text="Power plot",
+                                  text="Compute all",
                                   command=self.compute_all_click
                                   )
         export_button.grid(row=1, column=4)
 
     def compute_click(self):
+        """
+        This method is triggered when the "compute" button is clicked.
+        """
         starting_1 = self.starting_entry_1.get()
         starting_2 = self.starting_entry_2.get()
         ending_1 = self.ending_entry_1.get()
@@ -242,6 +266,9 @@ class ModelTools(tk.LabelFrame):
                                            threshold
                                            )
     def compute_all_click(self):
+        """
+        This method is triggered when the "compute all" button is clicked.
+        """
         starting_1 = self.starting_entry_1.get()
         starting_2 = self.starting_entry_2.get()
         threshold = self.threshold_entry.get()

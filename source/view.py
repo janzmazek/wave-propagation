@@ -15,7 +15,7 @@ CANVAS_BACKGROUND = "cadet blue"
 FRAME_OPTIONS = {"padx":10}
 
 class View(tk.Tk):
-    """docstring for View."""
+    """This class implements the "view" part of the MVC architectural pattern."""
 
     def __init__(self, *args, **kwargs):
         super(View, self).__init__(*args, **kwargs)
@@ -35,9 +35,15 @@ class View(tk.Tk):
         self.controller = None
 
     def register(self, controller):
+        """
+        This method registers the controller to send requests to.
+        """
         self.controller = controller
 
     def switch_tools(self, tools):
+        """
+        This method switches toolbar to requested tools.
+        """
         self.toolbar.pack_forget()
         self.toolbar.destroy()
         self.remove_binds()
@@ -62,12 +68,21 @@ class View(tk.Tk):
 
     def refresh_canvas(self, adjacency, positions, modified, selected=False,
                        numbered=False):
+        """
+        This method refreshes canvas based on the received data.
+        """
         self.canvas.refresh_canvas(adjacency, positions, modified, selected, numbered)
 
     def remove_binds(self):
+        """
+        This method removes all binds from the canvas.
+        """
         self.canvas.remove_binds()
 
     def add_bind(self, tools):
+        """
+        This method adds requested bind to canvas.
+        """
         if tools == "MovingTools":
             self.canvas.add_moving_bind()
         elif tools == "DeletingTools":
@@ -78,17 +93,35 @@ class View(tk.Tk):
             raise ValueError("No such tools.")
 
     def show_message(self, title, message):
+        """
+        This method displays the message box with requested title and a message.
+        """
         messagebox.showinfo(title, message)
 
     def save_as(self, extension):
+        """
+        This method displays the file dialog box to save file and returns the
+        file name.
+        """
         filename = filedialog.asksaveasfile(mode='w', defaultextension=extension)
+        if filename is None:
+            return None
         return filename.name
 
     def open(self):
+        """
+        This method displays the file dialog box to open file and returns the
+        file name.
+        """
         filename = filedialog.askopenfilename()
+        if filename == '':
+            return None
         return filename
 
     def resize_window(self, option):
+        """
+        This method sets new minimal size of the window.
+        """
         if option == "small":
             self.minsize(width=int(WIDTH/SCALE), height=int(HEIGHT/SCALE))
         elif option == "medium":
@@ -98,6 +131,9 @@ class View(tk.Tk):
 
 
     def change_background(self):
+        """
+        This method changes background colour to some random value.
+        """
         red = hex(random.randint(150, 255))[2:]
         green = hex(random.randint(150, 255))[2:]
         blue = hex(random.randint(150, 255))[2:]

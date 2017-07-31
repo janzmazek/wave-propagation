@@ -24,9 +24,12 @@ class Junction(object):
         self.__turning = lambda theta, ratio: 0.5*min(ratio*np.tan(theta), 1) # FT
 
     def __define_junction(self, widths):
+        """
+        This private method defines junction type based on input widths.
+        """
         junction_size = len(widths) - 1 # number of intersecting streets
         if junction_size == 1:
-            self.__junction == "dead-end"
+            self.__junction = "dead-end"
         elif junction_size == 2:
             self.__junction = "bend"
         elif junction_size == 3:
@@ -71,24 +74,11 @@ class Junction(object):
             else:
                 return lambda theta: self.__turning(theta, self.__ratio)
 
-    def compute_breaking_point(self):
-        """
-        This method returns a point of non-continuity for a given junction based
-        on street widths and junction type.
-        """
-        # TODO implement this
-        if self.__junction == "dead-end":
-            pass
-        elif self.__junction == "bend":
-            return np.arctan(1/self.__ratio)
-        elif self.__junction == "t-junction":
-            return np.arctan(0.5/self.__ratio)
-        elif self.__junction == "side-street" and not self.__next == "backward":
-            return np.arctan(2/self.__ratio)
-        elif self.__junction == "crossroads" and not self.__next == "backward":
-            return np.arctan(1/self.__ratio)
-
     def correct_orientation(self):
+        """
+        This method returns 0 if the streets doesn't change an orientation or
+        1 if it changes the orientation.
+        """
         if self.__next == "backward" or self.__next == "forward":
             return 0
         else:

@@ -197,7 +197,7 @@ class Controller(object):
         except ValueError as e:
             self.view.show_message("Error", e)
             return
-        results = self.model.compute_data(self.constructor.get_positions())
+        results = self.model.solve_all(self.constructor.get_positions())
         filename = self.view.save_as(".html")
         if filename is None:
             return
@@ -272,7 +272,8 @@ class Controller(object):
                 self.constructor.unset_grid()
             elif option == "MovingTools":
                 self.constructor.set_grid(self.constructor.get_horizontals(),
-                                          self.constructor.get_verticals()
+                                          self.constructor.get_verticals(),
+                                          100
                                           )
             self.view.switch_tools(option)
         elif option == "CustomisingTools":

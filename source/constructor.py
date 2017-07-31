@@ -9,13 +9,16 @@ import json
 OFFSET = 50
 LEGEND_WIDTH = 100
 STROKE_COLOUR = "black"
-GRID_WIDTH = 3
-WIDTH_SCALE = 0.5
+GRID_WIDTH = 8
+BORDER_WIDTH = 2
+WIDTH_SCALE = 1
 JUNCTION_WIDTH = 20
 JUNCTION_COLOUR = "gray"
 MAX_RADIUS = 25
 RESULT_COLOUR = "green"
 INITIAL_DECIBELS = 120
+
+HTML = False
 
 
 class Constructor(object):
@@ -33,7 +36,10 @@ class Constructor(object):
         self.__positions = None
         self.__stage = 0
 
-    def set_grid(self, horizontals, verticals, length=100):
+    def set_grid(self, horizontals, verticals, length):
+        """
+        This setter method sets stage 1 (setting and moving) of the construction.
+        """
         try:
             horizontals = int(horizontals)
             verticals = int(verticals)
@@ -56,6 +62,10 @@ class Constructor(object):
         self.__stage = 1
 
     def unset_grid(self):
+        """
+        This method is used to set the network to the stage 0 (instantiation) of
+        the construction.
+        """
         self.__horizontals = None
         self.__verticals = None
         self.__nodes = None
@@ -157,8 +167,6 @@ class Constructor(object):
         elif sum(self.__adjacency[j]) == 0:
             to_delete.append(j)
         if len(to_delete) != 0:
-            print("To delete:")
-            print(to_delete)
             self.__adjacency = np.delete(self.__adjacency, to_delete, axis=0)
             self.__adjacency = np.delete(self.__adjacency, to_delete, axis=1)
             self.__positions = np.delete(self.__positions, to_delete, axis=0)
@@ -166,13 +174,14 @@ class Constructor(object):
             self.__nodes = int(self.__nodes - len(to_delete))
 
 
-    def modify_adjacency(self, width=10, alpha=0.5):
+    def modify_adjacency(self, width, alpha):
         """
         This method creates new adjacency matrix with dictionaries of keys
         (alpha, street width, street length, orientation) instead of 1s.
         """
         if self.__stage == 1 or self.__stage == 2:
             self.__stage = 3
+        assert self.__stage == 3
         try:
             width = float(width)
             alpha = float(alpha)
@@ -182,7 +191,6 @@ class Constructor(object):
             raise ValueError("Width must be a positive number.")
         if alpha < 0 or alpha > 1:
             raise ValueError("Absorption must be a number between 0 and 1.")
-        assert self.__stage == 3
         self.__modified_adjacency = self.__adjacency.tolist() # To python structure
         positions = self.__positions
         for i in range(self.__nodes):
@@ -220,6 +228,10 @@ class Constructor(object):
                         "orientation": (orientation+2)%4}
 
     def unmodify_adjacency(self):
+        """
+        This method is used to set the stage to stage 2 (deleting) of the
+        construction.
+        """
         self.__stage = 2
         self.__modified_adjacency = None
 
@@ -232,7 +244,7 @@ class Constructor(object):
             width = float(width)
         except ValueError:
             raise ValueError("Width must be a floating point number.")
-        if width < 0:
+        if width <= 0:
             raise ValueError("Width must be a positive number.")
         if i in range(self.__nodes) and j in range(self.__nodes):
             if self.__modified_adjacency[i][j] is not 0:
@@ -264,9 +276,15 @@ class Constructor(object):
             raise ValueError("Nodes out of range.")
 
     def get_horizontals(self):
+        """
+        This getter method returns the number of horizontal streets.
+        """
         return self.__horizontals
 
     def get_verticals(self):
+        """
+        This getter method returns the number of vertical streets.
+        """
         return self.__verticals
 
     def get_adjacency(self):
@@ -288,9 +306,16 @@ class Constructor(object):
         return self.__positions
 
     def get_stage(self):
+        """
+        This getter method returns current stage index.
+        """
         return self.__stage
 
     def import_network(self, invalues):
+        """
+        This method is used to import existing network from the invalues
+        dictionary.
+        """
         self.__horizontals = invalues["horizontals"]
         self.__verticals = invalues["verticals"]
         self.__nodes = invalues["nodes"]
@@ -300,6 +325,10 @@ class Constructor(object):
         self.__stage = invalues["stage"]
 
     def export_network(self, filename):
+        """
+        This method is used to export currently constructed network to json
+        format to some file.
+        """
         data = {
                 "horizontals": self.__horizontals,
                 "verticals": self.__verticals,
@@ -314,7 +343,8 @@ class Constructor(object):
 
     def draw_network(self, filename, results=False):
         """
-        This method outputs file "output.html" with svg drawing of network.
+        This method outputs file "output.html" with svg drawing of network and
+        optinally plots the results.
         """
         positions = self.__positions
         if self.__stage == 3:
@@ -324,8 +354,9 @@ class Constructor(object):
             adjacency = self.__adjacency
             modified = False
         with open(filename, "w") as file:
-            file.write(
-                "<html><head><title>Network representation</title></head><body>")
+            if HTML:
+                file.write(
+                    "<html><head><title>Network representation</title></head><body>\n")
             file.write("<svg width='{0}' height='{1}'>\n".format(
                 positions[self.__nodes-1][0]+2*OFFSET+LEGEND_WIDTH,
                 positions[self.__nodes-1][1]+2*OFFSET
@@ -351,18 +382,18 @@ style='stroke: {4}; stroke-width: {5}'/>\n".format(
                                 xi+OFFSET, yi+OFFSET, xj+OFFSET, yj+OFFSET,
                                 STROKE_COLOUR, GRID_WIDTH
                                 ))
-            if modified:
+            if True:
                 # Draw junctions (rectangles with numbers)
                 counter = 0
                 for position in positions:
                     file.write("<rect x='{0}' y='{1}' width='{2}' height='{2}' \
-stroke='{3}' stroke-width='{4}' fill='{5}'/>".format(
+stroke='{3}' stroke-width='{4}' fill='{5}'/>\n".format(
                         position[0]-JUNCTION_WIDTH/2+OFFSET,
                         position[1]-JUNCTION_WIDTH/2+OFFSET,
-                        JUNCTION_WIDTH, STROKE_COLOUR, GRID_WIDTH, JUNCTION_COLOUR
+                        JUNCTION_WIDTH, STROKE_COLOUR, BORDER_WIDTH, JUNCTION_COLOUR
                         ))
-                    file.write("<text x='{0}' y='{1}' fill='{2}', \
-text-anchor='middle'>{3}</text>".format(
+                    file.write("<text text-anchor='middle' x='{0}' y='{1}' \
+fill='{2}'>{3}</text>\n".format(
                         position[0]+OFFSET,
                         position[1]+OFFSET+JUNCTION_WIDTH/4,
                         STROKE_COLOUR, counter
@@ -376,12 +407,13 @@ text-anchor='middle'>{3}</text>".format(
                     # scale radius:
                     radius = radius/INITIAL_DECIBELS*MAX_RADIUS
                     file.write("<circle cx='{0}' cy='{1}' r='{2}' stroke='{3}' \
-stroke-width='{4}' fill='rgb({5}, {6}, 0)'/>".format(
+stroke-width='{4}' fill='rgb({5}, {6}, 0)'\n/>".format(
                         X[i]+OFFSET, Y[i]+OFFSET,
                         radius,
-                        STROKE_COLOUR, GRID_WIDTH,
+                        STROKE_COLOUR, BORDER_WIDTH,
                         int(radius/MAX_RADIUS*255), 255-int(radius/MAX_RADIUS*255)
                         ))
                     counter += 1
-
-            file.write("</svg></body></html>")
+            file.write("</svg>\n")
+            if HTML:
+                file.write("</body></html>")

@@ -10,7 +10,10 @@ import networkx as nx
 from source.junction import Junction
 
 class Model(object):
-    """docstring for Model."""
+    """
+    This class of methods is the core part of the Probabilistic wave
+    propagation model.
+    """
     def __init__(self):
         self.__modified_adjacency = None
         self.__nodes = None
@@ -20,13 +23,16 @@ class Model(object):
         self.__threshold = None
 
     def set_adjacency(self, modified_adjacency):
+        """
+        This setter method sets the adjacency matrix of the network.
+        """
         self.__modified_adjacency = modified_adjacency
         self.__nodes = len(modified_adjacency)
         self.__graph = nx.from_numpy_matrix(self.__create_adjacency())
 
     def set_source(self, source1, source2):
         """
-        This setter method sets source node.
+        This setter method sets the source node.
         """
         try:
             source1 = int(source1)
@@ -43,7 +49,7 @@ class Model(object):
 
     def set_receiver(self, receiver1, receiver2):
         """
-        This setter method sets receiver node.
+        This setter method sets the receiver node.
         """
         try:
             receiver1 = int(receiver1)
@@ -59,6 +65,9 @@ class Model(object):
         self.__receiver = (receiver1, receiver2)
 
     def set_threshold(self, threshold):
+        """
+        This setter method sets the threshold of the computation.
+        """
         try:
             threshold = int(threshold)
         except ValueError:
@@ -66,12 +75,6 @@ class Model(object):
         if threshold < 0:
             raise ValueError("Threshold must be a positive number.")
         self.__threshold = threshold
-
-    def get_source(self):
-        if self.__source is not None:
-            return self.__source
-        else:
-            raise ValueError("Source not set.")
 
     def __create_adjacency(self):
         """
@@ -87,9 +90,8 @@ class Model(object):
 
     def solve(self):
         """
-        This method is the main method of the class and it solves the wave
-        propagation problem. Treshold specifies length additional to the
-        shortest path length.
+        This method is the main method of the class and solves the wave
+        propagation problem.
         """
         assert self.__source is not None and self.__receiver is not None and self.__threshold is not None
         paths = self.__compute_paths() # obtain all connecting paths
@@ -204,7 +206,7 @@ class Model(object):
 
     def __rotate(self, previous, current, following):
         """
-        This private method figures out an orientation of the junction and
+        This private method determines the orientation of the junction and
         provides information on street widths and exiting street.
         """
         orientation = self.__modified_adjacency[current][previous]["orientation"]
@@ -263,7 +265,13 @@ class Model(object):
         print("Contribution from path {0}: {1} (error {2})".format(path, integral, error))
         return (integral, error)
 
-    def compute_data(self, positions):
+    def solve_all(self, positions):
+        """
+        This method performs computations of the wave propagation problem from
+        the source to all possible receivers and returns the result as X and Y
+        coordinates of the receivers along with the percentage of the power
+        flow.
+        """
         receivers = self.__get_receivers()
         powers = []
         for receiver in receivers:
@@ -284,6 +292,9 @@ class Model(object):
         return (X, Y, Z)
 
     def __get_receivers(self):
+        """
+        This private method returns a list of tuples of all possible receivers.
+        """
         receivers = []
         for j in range(len(self.__modified_adjacency)):
             for i in range(j):
@@ -293,6 +304,10 @@ class Model(object):
         return receivers
 
     def __get_positions(self, streets, positions):
+        """
+        This private method returns a list of tuples of (X, Y) coordinates of
+        middles of the given streets based on the input positions matrix.
+        """
         center_positions = []
         for street in streets:
             x1, y1 = positions[street[0]][0], positions[street[0]][1]

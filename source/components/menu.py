@@ -1,6 +1,7 @@
 import tkinter as tk
 
 class Menu(tk.Menu):
+    """This class implements menu of "view" part of the MVC pattern."""
     def __init__(self, view, *args, **kwargs):
         super(Menu, self).__init__(view, *args, **kwargs)
         self.view = view
@@ -22,6 +23,9 @@ class Menu(tk.Menu):
         self.add_help_menu()
 
     def add_file_menu(self):
+        """
+        This method adds the file menu and submenu.
+        """
         self.file_menu.add_command(label="Import network",
                                    command=lambda: self.view.controller.file_click("import_network")
                                    )
@@ -39,6 +43,9 @@ class Menu(tk.Menu):
                                    )
 
     def add_window_menu(self):
+        """
+        This method adds the window menu and submenu.
+        """
         self.window_menu.add_command(label="Small",
                                      command=lambda: self.view.controller.window_click("small")
                                      )
@@ -50,6 +57,9 @@ class Menu(tk.Menu):
                                      )
 
     def add_tools_menu(self):
+        """
+        This method adds the tools menu and submenu.
+        """
         self.tools_menu.add_command(label="Create network",
                                     command=lambda: self.view.controller.tools_click("CreationTools")
                                     )
@@ -67,5 +77,8 @@ class Menu(tk.Menu):
                                     )
 
     def add_help_menu(self):
+        """
+        This method adds the help menu and submenu.
+        """
         self.help_menu.add_command(label="About", command=lambda: self.view.controller.about_click())
         self.help_menu.add_command(label="I don't like background", command=self.view.change_background)

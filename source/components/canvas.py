@@ -3,9 +3,11 @@ from PIL import ImageTk
 
 OFFSET = 20
 JUNCTION_COLOUR = "slate gray"
-STREET_COLOUR = "white"
+STREET_COLOUR = "snow"
+SELECTED_COLOUR = "green"
 
 class Canvas(tk.Canvas):
+    """This class implements canvas of "view" part of the MVC pattern."""
     def __init__(self, view, *args, **kwargs):
         super(Canvas, self).__init__(*args, **kwargs)
         self.view = view
@@ -13,23 +15,35 @@ class Canvas(tk.Canvas):
         self.background_image = False
 
     def set_background(self, filename):
+        """
+        This setter method sets the background image attribute.
+        """
         self.background_image = ImageTk.PhotoImage(file=filename)
 
     def remove_background(self):
+        """
+        This method removes the background image attribute.
+        """
         self.background_image = False
 
     def refresh_canvas(self, adjacency, positions, modified, selected, numbered):
+        """
+        This method refreshes canvas based on the received data.
+        """
         self.delete("all")
         if self.background_image:
             self.create_image(0, 0, image=self.background_image, anchor='nw', tags="background")
         if adjacency is not None and positions is not None:
-            self.draw_streets(adjacency, positions, modified)
+            self.__draw_streets(adjacency, positions, modified)
         if selected:
-            self.select_street(positions, selected)
+            self.__select_street(positions, selected)
         if numbered:
-            self.draw_junctions(positions)
+            self.__draw_junctions(positions)
 
-    def draw_streets(self, adjacency, positions, modified):
+    def __draw_streets(self, adjacency, positions, modified):
+        """
+        This private method draws lines on canvas based on the received data.
+        """
         for i in range(len(positions)):
             for j in range(i):
                 if adjacency[i][j] != 0:
@@ -56,17 +70,26 @@ class Canvas(tk.Canvas):
                                      width=width
                                      )
 
-    def select_street(self, positions, selected):
+    def __select_street(self, positions, selected):
+        """
+        This private method draws a street with with specified colour based on
+        received data.
+        """
         index1 = selected[0]
         index2 = selected[1]
         x0 = positions[index1][0]
         y0 = positions[index1][1]
         x1 = positions[index2][0]
         y1 = positions[index2][1]
-        self.create_line(x0+OFFSET, y0+OFFSET, x1+OFFSET, y1+OFFSET, fill="green", width=10)
+        self.create_line(x0+OFFSET, y0+OFFSET, x1+OFFSET, y1+OFFSET,
+                         fill=SELECTED_COLOUR, width=10)
 
 
-    def draw_junctions(self, positions):
+    def __draw_junctions(self, positions):
+        """
+        This private method draws circles with text inside based on the received
+        data.
+        """
         def circle(x, y, r, **kwargs):
             self.create_oval(x-r, y-r, x+r, y+r, **kwargs)
         node = 0
@@ -84,22 +107,34 @@ class Canvas(tk.Canvas):
             node += 1
 
     def remove_binds(self):
+        """
+        This method removes all binds from canvas.
+        """
         self.unbind("<Button-1>")
         self.unbind("<ButtonRelease-1>")
 
     def add_moving_bind(self):
+        """
+        This method adds the moving bind (LMB click and release) to the canvas.
+        """
         self.bind("<Button-1>", self.click_to_move)
         self.bind("<ButtonRelease-1>", self.release_to_move)
 
     def add_deleting_bind(self):
+        """
+        This method adds the deleting bind (LMB click) to the canvas.
+        """
         self.bind("<Button-1>", self.click_to_delete)
 
     def add_selecting_bind(self):
+        """
+        This method adds the selecting bind (LMB click) to the canvas.
+        """
         self.bind("<Button-1>", self.click_to_select)
 
     def click_to_move(self, event):
         """
-        This method is triggered when left mouse button is clicked.
+        This method is triggered after receiving moving bind (LMB click) event.
         """
         canvas = event.widget
         handle = canvas.find_withtag("current") # returns tuple of handle
@@ -113,7 +148,7 @@ class Canvas(tk.Canvas):
 
     def release_to_move(self, event):
         """
-        This method is triggered when left mouse button is released.
+        This method is triggered after receiving moving bind (LMB release) event.
         """
         canvas = event.widget
         handle = canvas.find_withtag("current")
@@ -126,7 +161,7 @@ class Canvas(tk.Canvas):
 
     def click_to_delete(self, event):
         """
-        This method is triggered when left mouse button is clicked.
+        This method is triggered after receiving deleting bind (LMB click) event.
         """
         canvas = event.widget
         handle = canvas.find_withtag("current")
@@ -139,6 +174,9 @@ class Canvas(tk.Canvas):
         self.view.controller.click_to_delete(endpoints, OFFSET)
 
     def click_to_select(self, event):
+        """
+        This method is triggered after receiving selecting bind (LMB click) event.
+        """
         canvas = event.widget
         handle = canvas.find_withtag("current")
         tag = canvas.gettags("current")

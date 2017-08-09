@@ -5,6 +5,7 @@ DEFAULT_VERTICALS = 6
 DEFAULT_LENGTH = 100
 DEFAULT_WIDTH = 10
 DEFAULT_ALPHA = 0.04
+DEFAULT_BETA = 0.01
 DEFAULT_THRESHOLD = 2
 
 ENTRY_WIDTH = 4
@@ -127,12 +128,19 @@ class ModifyingTools(tk.LabelFrame):
         self.width_entry = tk.Entry(self, width=ENTRY_WIDTH)
         self.width_entry.pack(side=tk.LEFT)
         alpha_message = tk.Label(self,
-                                 text="Absorption coefficient [{0}]:".format(DEFAULT_ALPHA),
+                                 text="Wall absorption [{0}]:".format(DEFAULT_ALPHA),
                                  padx=PADX
                                  )
         alpha_message.pack(side=tk.LEFT)
         self.alpha_entry = tk.Entry(self, width=ENTRY_WIDTH)
         self.alpha_entry.pack(side=tk.LEFT)
+        beta_message = tk.Label(self,
+                                 text="Air absorption [{0}]:".format(DEFAULT_BETA),
+                                 padx=PADX
+                                 )
+        beta_message.pack(side=tk.LEFT)
+        self.beta_entry = tk.Entry(self, width=ENTRY_WIDTH)
+        self.beta_entry.pack(side=tk.LEFT)
         modify_button = tk.Button(self,
                                   text="Modify network",
                                   command=self.click
@@ -149,7 +157,10 @@ class ModifyingTools(tk.LabelFrame):
         alpha = self.alpha_entry.get()
         if alpha == '':
             alpha = DEFAULT_ALPHA
-        self.view.controller.done_modifying(width, alpha)
+        beta = self.beta_entry.get()
+        if beta == '':
+            beta = DEFAULT_BETA
+        self.view.controller.done_modifying(width, alpha, beta)
 
 class CustomisingTools(tk.LabelFrame):
     """This class of methods implements customising tools in the toolbar."""
@@ -170,12 +181,19 @@ class CustomisingTools(tk.LabelFrame):
         self.width_entry = tk.Entry(self, width=ENTRY_WIDTH)
         self.width_entry.pack(side=tk.LEFT)
         alpha = tk.Label(self,
-                         text="Absorption coefficient [{0}]:".format(DEFAULT_ALPHA),
+                         text="Wall absorption [{0}]:".format(DEFAULT_ALPHA),
                          padx=PADX
                          )
         alpha.pack(side=tk.LEFT)
         self.alpha_entry = tk.Entry(self, width=ENTRY_WIDTH)
         self.alpha_entry.pack(side=tk.LEFT)
+        beta = tk.Label(self,
+                         text="Air absorption [{0}]:".format(DEFAULT_BETA),
+                         padx=PADX
+                         )
+        beta.pack(side=tk.LEFT)
+        self.beta_entry = tk.Entry(self, width=ENTRY_WIDTH)
+        self.beta_entry.pack(side=tk.LEFT)
         customise_button = tk.Button(self,
                                      text="Customise",
                                      command=self.customise_click
@@ -197,8 +215,11 @@ class CustomisingTools(tk.LabelFrame):
         alpha = self.alpha_entry.get()
         if alpha == '':
             alpha = DEFAULT_ALPHA
+        beta = self.beta_entry.get()
+        if beta == '':
+            beta = DEFAULT_BETA
 
-        self.view.controller.customise_click(width, alpha)
+        self.view.controller.customise_click(width, alpha, beta)
 
     def done_customising(self):
         """
@@ -212,41 +233,35 @@ class ModelTools(tk.LabelFrame):
         super(ModelTools, self).__init__(view, *args, text="Choose model parameters", **kwargs)
         self.view = view
 
-        starting_label = tk.Label(self,
-                                  text="Starting point.",
-                                  padx=PADX
-                                  )
-        starting_label.grid(row=0, column=0)
+        starting_label = tk.Label(self, text="Source:", padx=PADX )
+        starting_label.pack(side=tk.LEFT)
         self.starting_entry_1 = tk.Entry(self, width=ENTRY_WIDTH)
-        self.starting_entry_1.grid(row=0, column=1)
+        self.starting_entry_1.pack(side=tk.LEFT)
         self.starting_entry_2 = tk.Entry(self, width=ENTRY_WIDTH)
-        self.starting_entry_2.grid(row=0, column=2)
-        ending_label = tk.Label(self,
-                                text="Eding point.",
-                                padx=PADX
-                                )
-        ending_label.grid(row=1, column=0)
+        self.starting_entry_2.pack(side=tk.LEFT)
+        ending_label = tk.Label(self, text="Receiver:", padx=PADX)
+        ending_label.pack(side=tk.LEFT)
         self.ending_entry_1 = tk.Entry(self, width=ENTRY_WIDTH)
-        self.ending_entry_1.grid(row=1, column=1)
+        self.ending_entry_1.pack(side=tk.LEFT)
         self.ending_entry_2 = tk.Entry(self, width=ENTRY_WIDTH)
-        self.ending_entry_2.grid(row=1, column=2)
+        self.ending_entry_2.pack(side=tk.LEFT)
         threshold_label = tk.Label(self,
                                    text="Threshold [{0}]:".format(DEFAULT_THRESHOLD),
                                    padx=PADX
                                    )
-        threshold_label.grid(row=0, column=3)
+        threshold_label.pack(side=tk.LEFT)
         self.threshold_entry = tk.Entry(self, width=ENTRY_WIDTH)
-        self.threshold_entry.grid(row=0, column=4)
+        self.threshold_entry.pack(side=tk.LEFT)
         compute_button = tk.Button(self,
                                    text="Compute",
                                    command=self.compute_click
                                    )
-        compute_button.grid(row=1, column=3)
+        compute_button.pack(side=tk.LEFT)
         export_button = tk.Button(self,
                                   text="Compute all",
                                   command=self.compute_all_click
                                   )
-        export_button.grid(row=1, column=4)
+        export_button.pack(side=tk.LEFT)
 
     def compute_click(self):
         """
@@ -258,13 +273,10 @@ class ModelTools(tk.LabelFrame):
         ending_2 = self.ending_entry_2.get()
         threshold = self.threshold_entry.get()
         if threshold == '':
-            threshold = 2
-        self.view.controller.compute_click(starting_1,
-                                           starting_2,
-                                           ending_1,
-                                           ending_2,
-                                           threshold
-                                           )
+            threshold = DEFAULT_THRESHOLD
+        source = (starting_1, starting_2)
+        receiver = (ending_1, ending_2)
+        self.view.controller.compute_click(source, receiver, threshold)
     def compute_all_click(self):
         """
         This method is triggered when the "compute all" button is clicked.
@@ -273,5 +285,6 @@ class ModelTools(tk.LabelFrame):
         starting_2 = self.starting_entry_2.get()
         threshold = self.threshold_entry.get()
         if threshold == '':
-            threshold = 2
-        self.view.controller.compute_all_click(starting_1, starting_2, threshold)
+            threshold = DEFAULT_THRESHOLD
+        source = (starting_1, starting_2)
+        self.view.controller.compute_all_click(source, threshold)

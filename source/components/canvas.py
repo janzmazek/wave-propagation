@@ -3,8 +3,12 @@ from PIL import ImageTk
 
 OFFSET = 20
 JUNCTION_COLOUR = "slate gray"
-STREET_COLOUR = "snow"
+STREET_COLOUR = "yellow"
 SELECTED_COLOUR = "green"
+STROKE_WIDTH = 5
+
+# max absorption displays as red colour
+MAX_ABSORPTION = 0.1
 
 class Canvas(tk.Canvas):
     """This class implements canvas of "view" part of the MVC pattern."""
@@ -44,30 +48,66 @@ class Canvas(tk.Canvas):
         """
         This private method draws lines on canvas based on the received data.
         """
+        def get_hex_fill(coefficient, max_absorption):
+            red = hex(int(coefficient/max_absorption*255))
+            red = red[-2:] if len(red)==4 else "0{0}".format(red[-1])
+            blue = hex(int((1-coefficient/max_absorption)*255))
+            blue = blue[-2:] if len(blue)==4 else "0{0}".format(blue[-1])
+            fill = "#{0}00{1}".format(red, blue)
+            return fill
+
+        def draw_stroke(x0, y0, x1, y1, stroke, width):
+            if stroke:
+                offset = width/2
+                if x0==x1:
+                    self.create_line(x0-offset, y0,
+                                     x1-offset, y1,
+                                     width=STROKE_WIDTH, fill=stroke,
+                                     tags="background"
+                                     )
+                    self.create_line(x0+offset, y0,
+                                     x1+offset, y1,
+                                     width=STROKE_WIDTH, fill=stroke,
+                                     tags="background"
+                                     )
+                elif y0==y1:
+                    self.create_line(x0, y0-offset,
+                                     x1, y1-offset,
+                                     width=STROKE_WIDTH, fill=stroke,
+                                     tags="background"
+                                     )
+                    self.create_line(x0, y0+offset,
+                                     x1, y1+offset,
+                                     width=STROKE_WIDTH, fill=stroke,
+                                     tags="background"
+                                     )
+
         for i in range(len(positions)):
             for j in range(i):
                 if adjacency[i][j] != 0:
-                    x0 = positions[i][0]
-                    y0 = positions[i][1]
-                    x1 = positions[j][0]
-                    y1 = positions[j][1]
+                    x0, y0 = positions[i][0], positions[i][1]
+                    x1, y1 = positions[j][0], positions[j][1]
                     if modified:
                         alpha = adjacency[i][j]["alpha"]
-                        red = hex(int(alpha*255))
-                        red = red[-2:] if len(red)==4 else "0{0}".format(red[-1])
-                        blue = hex(int((1-alpha)*255))
-                        blue = blue[-2:] if len(blue)==4 else "0{0}".format(blue[-1])
-                        fill = "#{0}00{1}".format(red, blue)
+                        beta = adjacency[i][j]["beta"]
+                        alpha_fill = get_hex_fill(alpha, MAX_ABSORPTION)
+                        beta_fill = get_hex_fill(beta, MAX_ABSORPTION)
                         width = adjacency[i][j]["width"]
                     else:
-                        fill = STREET_COLOUR
+                        alpha_fill = False
+                        beta_fill = STREET_COLOUR
                         width = 5
-                    self.create_line(x0+OFFSET,
-                                     y0+OFFSET,
-                                     x1+OFFSET,
-                                     y1+OFFSET,
-                                     fill=fill,
-                                     width=width
+                    draw_stroke(x0+OFFSET, y0+OFFSET,
+                                x1+OFFSET, y1+OFFSET,
+                                stroke=alpha_fill, width=width
+                                )
+        for i in range(len(positions)):
+            for j in range(i):
+                if adjacency[i][j] != 0:
+                    x0, y0 = positions[i][0], positions[i][1]
+                    x1, y1 = positions[j][0], positions[j][1]
+                    self.create_line(x0+OFFSET, y0+OFFSET, x1+OFFSET, y1+OFFSET,
+                                     width=width, fill=beta_fill
                                      )
 
     def __select_street(self, positions, selected):

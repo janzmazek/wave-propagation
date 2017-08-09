@@ -1,7 +1,10 @@
 import json
 
 class Controller(object):
-    """docstring for Controller."""
+    """
+    This class implements the "controller" part of the MVC architectural
+    pattern.
+    """
     def __init__(self, constructor, model, view):
         self.constructor = constructor
         self.model = model
@@ -124,9 +127,9 @@ class Controller(object):
                                  )
         self.view.remove_binds()
 
-    def done_modifying(self, width, alpha):
+    def done_modifying(self, width, alpha, beta):
         try:
-            self.constructor.modify_adjacency(width, alpha)
+            self.constructor.modify_adjacency(width, alpha, beta)
         except ValueError as e:
             self.view.show_message("Error", e)
             return
@@ -148,13 +151,14 @@ class Controller(object):
                                  selected=self.selected
                                  )
 
-    def customise_click(self, width, alpha):
+    def customise_click(self, width, alpha, beta):
         if not self.selected:
             self.view.show_message("Error", "Nothing selected.")
             return
         try:
             self.constructor.change_width(*self.selected, width)
             self.constructor.change_alpha(*self.selected, alpha)
+            self.constructor.change_beta(*self.selected, beta)
         except ValueError as e:
             self.view.show_message("Error", e)
             return
@@ -175,7 +179,9 @@ class Controller(object):
                                  numbered=self.numbered
                                  )
 
-    def compute_click(self, starting_1, starting_2, ending_1, ending_2, threshold):
+    def compute_click(self, source, receiver, threshold):
+        (starting_1, starting_2) = source
+        (ending_1, ending_2) = receiver
         self.model.set_adjacency(self.constructor.get_modified_adjacency())
         try:
             self.model.set_source(starting_1, starting_2)
@@ -189,7 +195,8 @@ class Controller(object):
         error = format(error*100, '.3f')
         self.view.show_message("Result", "Power: {0} % ± {1} %".format(power, error))
 
-    def compute_all_click(self, starting_1, starting_2, threshold):
+    def compute_all_click(self, source, threshold):
+        starting_1, starting_2 = source
         self.model.set_adjacency(self.constructor.get_modified_adjacency())
         try:
             self.model.set_source(starting_1, starting_2)
@@ -291,5 +298,7 @@ class Controller(object):
         self.view.refresh_canvas(adjacency, positions, self.modified)
 
     def about_click(self):
-        self.view.show_message("About", "Hello")
+        with open("wave-propagation/source/about.txt", "r") as file:
+            content = file.read()
+        self.view.show_message("About", content)
         return

@@ -15,7 +15,6 @@ WIDTH_SCALE = 1
 JUNCTION_WIDTH = 20
 JUNCTION_COLOUR = "gray"
 MAX_RADIUS = 25
-RESULT_COLOUR = "green"
 INITIAL_DECIBELS = 120
 
 HTML = False
@@ -174,10 +173,10 @@ class Constructor(object):
             self.__nodes = int(self.__nodes - len(to_delete))
 
 
-    def modify_adjacency(self, width, alpha):
+    def modify_adjacency(self, width, alpha, beta):
         """
         This method creates new adjacency matrix with dictionaries of keys
-        (alpha, street width, street length, orientation) instead of 1s.
+        (alpha, beta, street width, street length, orientation) instead of 1s.
         """
         if self.__stage == 1 or self.__stage == 2:
             self.__stage = 3
@@ -185,11 +184,12 @@ class Constructor(object):
         try:
             width = float(width)
             alpha = float(alpha)
+            beta = float(beta)
         except ValueError:
             raise ValueError("Width and absorption must be floating point numbers.")
         if width < 0:
             raise ValueError("Width must be a positive number.")
-        if alpha < 0 or alpha > 1:
+        if alpha < 0 or alpha > 1 or beta < 0 or beta > 1:
             raise ValueError("Absorption must be a number between 0 and 1.")
         self.__modified_adjacency = self.__adjacency.tolist() # To python structure
         positions = self.__positions
@@ -218,11 +218,13 @@ class Constructor(object):
 
                     self.__modified_adjacency[i][j] = {
                         "alpha": alpha,
+                        "beta": beta,
                         "width": width,
                         "length": length,
                         "orientation": orientation}
                     self.__modified_adjacency[j][i] = {
                         "alpha": alpha,
+                        "beta": beta,
                         "width": width,
                         "length": length,
                         "orientation": (orientation+2)%4}
@@ -257,7 +259,7 @@ class Constructor(object):
 
     def change_alpha(self, i, j, alpha):
         """
-        This method changes the absorption coefficient of street (i, j).
+        This method changes the wall absorption of street (i, j).
         """
         assert self.__stage == 3
         try:
@@ -266,14 +268,30 @@ class Constructor(object):
             raise ValueError("Absorption must be a floating point number.")
         if alpha < 0 or alpha > 1:
             raise ValueError("Absorption must be a number between 0 and 1")
-        if i in range(self.__nodes) and j in range(self.__nodes):
-            if self.__modified_adjacency[i][j] != 0:
-                self.__modified_adjacency[i][j]["alpha"] = alpha
-                self.__modified_adjacency[j][i]["alpha"] = alpha
-            else:
-                raise ValueError("Junctions are not neighbours.")
-        else:
+        if i not in range(self.__nodes) or j not in range(self.__nodes):
             raise ValueError("Nodes out of range.")
+        if self.__modified_adjacency[i][j] == 0:
+            raise ValueError("Junctions are not neighbours.")
+        self.__modified_adjacency[i][j]["alpha"] = alpha
+        self.__modified_adjacency[j][i]["alpha"] = alpha
+
+    def change_beta(self, i, j, beta):
+        """
+        This method changes the air absorption of street (i, j).
+        """
+        assert self.__stage == 3
+        try:
+            beta = float(beta)
+        except ValueError:
+            raise ValueError("Absorption must be a floating point number.")
+        if beta < 0 or beta > 1:
+            raise ValueError("Absorption must be a number between 0 and 1")
+        if i not in range(self.__nodes) or j not in range(self.__nodes):
+            raise ValueError("Nodes out of range.")
+        if self.__modified_adjacency[i][j] == 0:
+            raise ValueError("Junctions are not neighbours.")
+        self.__modified_adjacency[i][j]["alpha"] = beta
+        self.__modified_adjacency[j][i]["alpha"] = beta
 
     def get_horizontals(self):
         """
@@ -382,23 +400,23 @@ style='stroke: {4}; stroke-width: {5}'/>\n".format(
                                 xi+OFFSET, yi+OFFSET, xj+OFFSET, yj+OFFSET,
                                 STROKE_COLOUR, GRID_WIDTH
                                 ))
-            if True:
-                # Draw junctions (rectangles with numbers)
-                counter = 0
-                for position in positions:
-                    file.write("<rect x='{0}' y='{1}' width='{2}' height='{2}' \
+
+            # Draw junctions (rectangles with numbers)
+            counter = 0
+            for position in positions:
+                file.write("<rect x='{0}' y='{1}' width='{2}' height='{2}' \
 stroke='{3}' stroke-width='{4}' fill='{5}'/>\n".format(
-                        position[0]-JUNCTION_WIDTH/2+OFFSET,
-                        position[1]-JUNCTION_WIDTH/2+OFFSET,
-                        JUNCTION_WIDTH, STROKE_COLOUR, BORDER_WIDTH, JUNCTION_COLOUR
-                        ))
-                    file.write("<text text-anchor='middle' x='{0}' y='{1}' \
+                    position[0]-JUNCTION_WIDTH/2+OFFSET,
+                    position[1]-JUNCTION_WIDTH/2+OFFSET,
+                    JUNCTION_WIDTH, STROKE_COLOUR, BORDER_WIDTH, JUNCTION_COLOUR
+                    ))
+                file.write("<text text-anchor='middle' x='{0}' y='{1}' \
 fill='{2}'>{3}</text>\n".format(
-                        position[0]+OFFSET,
-                        position[1]+OFFSET+JUNCTION_WIDTH/4,
-                        STROKE_COLOUR, counter
-                        ))
-                    counter += 1
+                    position[0]+OFFSET,
+                    position[1]+OFFSET+JUNCTION_WIDTH/4,
+                    STROKE_COLOUR, counter
+                    ))
+                counter += 1
 
             if results:
                 (X, Y, Z) = results

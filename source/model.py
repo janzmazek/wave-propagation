@@ -151,7 +151,7 @@ class Model(object):
     def __walk(self, path):
         """
         This private method iterates through the path and fills the functions
-        and breaking_points arrays at each step.
+        and other street values at each step.
         """
         # Prepend "apparent" source
         if path[0] == self.__source[0]:
@@ -164,6 +164,7 @@ class Model(object):
         # Fill width, alpha and rotation of the first street
         widths = [self.__modified_adjacency[path[0]][path[1]]["width"]]
         alphas = [self.__modified_adjacency[path[0]][path[1]]["alpha"]]
+        betas = [self.__modified_adjacency[path[0]][path[1]]["beta"]]
         rotations = [0]
 
         # Append "apparent" receiver
@@ -174,7 +175,6 @@ class Model(object):
 
         # Set empty array of functions and breaking points
         functions = []
-        breaking_points = set()
 
         # Iterate through the rest of the path
         for i in range(1, len(path)-1):
@@ -184,12 +184,12 @@ class Model(object):
             rotated_widths = self.__rotate(previous, current, following)
             junction = Junction(rotated_widths, current)
             functions.append(junction.compute_function())
-            breaking_points.add(junction.compute_breaking_point())
 
             # Add length, alpha and rotation of the following street
             lengths.append(self.__modified_adjacency[current][following]["length"])
             widths.append(self.__modified_adjacency[current][following]["width"])
             alphas.append(self.__modified_adjacency[current][following]["alpha"])
+            betas.append(self.__modified_adjacency[current][following]["beta"])
             rotations.append((rotations[-1]+junction.correct_orientation())%2)
 
         # Last length is only half
@@ -197,11 +197,11 @@ class Model(object):
 
         return {"path": path,
                 "functions": functions,
-                "breaks": breaking_points,
                 "rotations": rotations,
                 "lengths": lengths,
                 "widths": widths,
-                "alphas": alphas
+                "alphas": alphas,
+                "betas": betas
                 }
 
     def __rotate(self, previous, current, following):
@@ -236,33 +236,42 @@ class Model(object):
 
     def __integrate(self, integrand):
         """
-        This private method integrates functions with respect to the breaking
-        points.
+        This private method integrates functions.
         """
         path = integrand["path"]
         functions = integrand["functions"]
-        breaking_points = integrand["breaks"]
         rotations = integrand["rotations"]
         lengths = integrand["lengths"]
         widths = integrand["widths"]
         alphas = integrand["alphas"]
+        betas = integrand["betas"]
 
         def compose_function(theta):
             # Scalar coefficient and first street element
-            complete = 1/np.pi * (1-alphas[0])**(lengths[0]/widths[0]*np.tan(theta))
-            # Junctions functions and street elements
+            complete = 1/np.pi
+            # First street wall absorption
+            complete *= (1-alphas[0])**(lengths[0]/widths[0]*np.tan(theta))
+            # First street air absorption
+            complete *= (1-betas[0])**(lengths[0]/widths[0]/np.cos(theta))
             for i in range(1, len(path)-1):
+                # Rotate angle by 90 degrees if orientation changes
                 if rotations[i] == 1:
                     angle = np.pi/2 - theta
                 else:
                     angle = theta
-                complete = complete * (1-alphas[i])**(lengths[i]/widths[i]*np.tan(theta)) \
-                    *functions[i-1](theta)
+                # Junction function
+                complete *= functions[i-1](angle)
+                # Wall absorption
+                complete *= (1-alphas[i])**(lengths[i]/widths[i]*np.tan(angle))
+                # Air absorption
+                complete *= (1-betas[i])**(lengths[i]/widths[i]/np.cos(angle))
+
             return complete
             # Thesis page 85 - add /cos and 1/width
 
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)
-        print("Contribution from path {0}: {1} (error {2})".format(path, integral, error))
+        print("Contribution from path {0}: {1} (error {2})".format(
+            path, integral, error))
         return (integral, error)
 
     def solve_all(self, positions):

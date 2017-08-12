@@ -5,19 +5,30 @@ This module constructs network of streets.
 import numpy as np
 import json
 
+# Adobe flat UI colour scheme
+DARK_BLUE = "#2C3E50"
+MEDIUM_BLUE = "#2980B9"
+LIGHT_BLUE = "#3498DB"
+RED = "#E74C3C"
+WHITE = "#ECF0F1"
 
-OFFSET = 50
-LEGEND_WIDTH = 100
+# Colour parameters
+STREET_COLOUR = DARK_BLUE
+JUNCTION_COLOUR = MEDIUM_BLUE
 STROKE_COLOUR = "black"
-GRID_WIDTH = 8
-BORDER_WIDTH = 2
-WIDTH_SCALE = 1
+LEGEND_BACKGROUND = WHITE
+
+# Dimensions
+OFFSET = 50
+LEGEND_WIDTH = 300
+STREET_WIDTH = 8
+STROKE_WIDTH = 2
 JUNCTION_WIDTH = 20
-JUNCTION_COLOUR = "gray"
 MAX_RADIUS = 25
 INITIAL_DECIBELS = 120
 
-HTML = False
+# Max absorption
+MAX_ABSORPTION = 0.1
 
 
 class Constructor(object):
@@ -290,8 +301,8 @@ class Constructor(object):
             raise ValueError("Nodes out of range.")
         if self.__modified_adjacency[i][j] == 0:
             raise ValueError("Junctions are not neighbours.")
-        self.__modified_adjacency[i][j]["alpha"] = beta
-        self.__modified_adjacency[j][i]["alpha"] = beta
+        self.__modified_adjacency[i][j]["beta"] = beta
+        self.__modified_adjacency[j][i]["beta"] = beta
 
     def get_horizontals(self):
         """
@@ -364,6 +375,60 @@ class Constructor(object):
         This method outputs file "output.html" with svg drawing of network and
         optinally plots the results.
         """
+        def get_hex_fill(coefficient, max_absorption):
+            red = hex(int(coefficient/max_absorption*255))
+            red = red[-2:] if len(red)==4 else "0{0}".format(red[-1])
+            blue = hex(int((1-coefficient/max_absorption)*255))
+            blue = blue[-2:] if len(blue)==4 else "0{0}".format(blue[-1])
+            fill = "#{0}00{1}".format(red, blue)
+            return fill
+
+        def svg_header(width, height):
+            return "<svg width='{0}' height='{1}'>\n".format(width, height)
+
+        def svg_line(x1, y1, x2, y2, fill=STREET_COLOUR, width=STREET_WIDTH):
+            return "<line x1='{0}' y1='{1}' x2='{2}' y2='{3}' \
+style='stroke: {4}; stroke-width:{5}'/>\n".format(x1+OFFSET, y1+OFFSET,
+                                                  x2+OFFSET, y2+OFFSET,
+                                                  fill, width)
+
+        def svg_square(x, y):
+            return "<rect x='{0}' y='{1}' width='{2}' height='{2}' \
+stroke='{3}' stroke-width='{4}' fill='{5}'/>\n".format(x-JUNCTION_WIDTH/2+OFFSET,
+                                                       y-JUNCTION_WIDTH/2+OFFSET,
+                                                       JUNCTION_WIDTH,
+                                                       STROKE_COLOUR,
+                                                       STROKE_WIDTH,
+                                                       JUNCTION_COLOUR
+                                                       )
+
+        def svg_circle(x, y, r, fill):
+            return "<circle cx='{0}' cy='{1}' r='{2}' stroke='{3}' \
+stroke-width='{4}' fill='{5}'\n/>".format(x+OFFSET,
+                                           y+OFFSET,
+                                           r,
+                                           STROKE_COLOUR,
+                                           STROKE_WIDTH,
+                                           fill
+                                           )
+
+        def svg_text(x, y, number):
+            return "<text text-anchor='middle' x='{0}' y='{1}' \
+fill='{2}'>{3}</text>\n".format(x+OFFSET,
+                                y+OFFSET+JUNCTION_WIDTH/4,
+                                STROKE_COLOUR,
+                                number
+                                )
+
+        def svg_rectangle(x, y, width, height):
+            return "<rect x='{0}' y='{1}' width='{2}' height='{3}'\
+stroke='{4}' stroke-width='{5}' fill='{6}'/>\n".format(x+OFFSET, y+OFFSET,
+                                                         width, height,
+                                                         STROKE_COLOUR,
+                                                         STROKE_WIDTH,
+                                                         LEGEND_BACKGROUND
+                                                         )
+
         positions = self.__positions
         if self.__stage == 3:
             adjacency = self.__modified_adjacency
@@ -371,67 +436,92 @@ class Constructor(object):
         else:
             adjacency = self.__adjacency
             modified = False
+
         with open(filename, "w") as file:
-            if HTML:
-                file.write(
-                    "<html><head><title>Network representation</title></head><body>\n")
-            file.write("<svg width='{0}' height='{1}'>\n".format(
-                positions[self.__nodes-1][0]+2*OFFSET+LEGEND_WIDTH,
-                positions[self.__nodes-1][1]+2*OFFSET
-                ))
+            width = positions[self.__nodes-1][0]+2*OFFSET
+            height = positions[self.__nodes-1][1]+2*OFFSET
+            if results:
+                width += LEGEND_WIDTH
+            file.write(svg_header(width, height))
+            # Draw walls if modified (with absorption)
+            if modified:
+                for i in range(self.__nodes):
+                    for j in range(i):
+                        if adjacency[i][j] != 0:
+                            [xi, yi] = positions[i]
+                            [xj, yj] = positions[j]
+                            alpha = adjacency[i][j]["alpha"]
+                            alpha_fill = get_hex_fill(alpha, MAX_ABSORPTION)
+                            width = adjacency[i][j]["width"]
+                            translation = width/2
+                            if xi == xj:
+                                file.write(svg_line(xi-translation, yi,
+                                                    xj-translation, yj,
+                                                    alpha_fill, width
+                                                    ))
+                                file.write(svg_line(xi+translation, yi,
+                                                    xj+translation, yj,
+                                                    alpha_fill, width
+                                                    ))
+                            elif yi == yj:
+                                file.write(svg_line(xi, yi-translation,
+                                                    xj, yj-translation,
+                                                    alpha_fill, width
+                                                    ))
+                                file.write(svg_line(xi, yi+translation,
+                                                    xj, yj+translation,
+                                                    alpha_fill, width
+                                                    ))
+
+
+            # Draw streets (with absorption if modified)
             for i in range(self.__nodes):
                 for j in range(i):
                     if adjacency[i][j] != 0:
                         [xi, yi] = positions[i]
                         [xj, yj] = positions[j]
-                        if modified:
-                            alpha = adjacency[i][j]["alpha"]
-                            width = adjacency[i][j]["width"]
-                            file.write(
-                                "<line x1='{0}' y1='{1}' x2='{2}' y2='{3}' \
-style='stroke: rgb({4}, 0, {5}); stroke-width:{6}'/>\n".format(
-                                xi+OFFSET, yi+OFFSET, xj+OFFSET, yj+OFFSET,
-                                int(alpha*255), int((1-alpha)*255),
-                                width*WIDTH_SCALE
-                                ))
+                        if not modified:
+                            file.write(svg_line(xi, yi, xj, yj))
                         else:
-                            file.write("<line x1='{0}' y1='{1}' x2='{2}' y2='{3}' \
-style='stroke: {4}; stroke-width: {5}'/>\n".format(
-                                xi+OFFSET, yi+OFFSET, xj+OFFSET, yj+OFFSET,
-                                STROKE_COLOUR, GRID_WIDTH
-                                ))
+                            beta = adjacency[i][j]["beta"]
+                            beta_fill = get_hex_fill(beta, MAX_ABSORPTION)
+                            width = adjacency[i][j]["width"]
+                            file.write(svg_line(xi, yi, xj, yj,
+                                                beta_fill, width
+                                                ))
 
             # Draw junctions (rectangles with numbers)
             counter = 0
             for position in positions:
-                file.write("<rect x='{0}' y='{1}' width='{2}' height='{2}' \
-stroke='{3}' stroke-width='{4}' fill='{5}'/>\n".format(
-                    position[0]-JUNCTION_WIDTH/2+OFFSET,
-                    position[1]-JUNCTION_WIDTH/2+OFFSET,
-                    JUNCTION_WIDTH, STROKE_COLOUR, BORDER_WIDTH, JUNCTION_COLOUR
-                    ))
-                file.write("<text text-anchor='middle' x='{0}' y='{1}' \
-fill='{2}'>{3}</text>\n".format(
-                    position[0]+OFFSET,
-                    position[1]+OFFSET+JUNCTION_WIDTH/4,
-                    STROKE_COLOUR, counter
-                    ))
+                file.write(svg_square(position[0], position[1]))
+                file.write(svg_text(position[0], position[1], counter))
                 counter += 1
 
+            # Draw results
             if results:
                 (X, Y, Z) = results
                 for i in range(len(Z)):
                     radius = 20*np.log10(Z[i]*10**(INITIAL_DECIBELS/20))
                     # scale radius:
                     radius = radius/INITIAL_DECIBELS*MAX_RADIUS
-                    file.write("<circle cx='{0}' cy='{1}' r='{2}' stroke='{3}' \
-stroke-width='{4}' fill='rgb({5}, {6}, 0)'\n/>".format(
-                        X[i]+OFFSET, Y[i]+OFFSET,
-                        radius,
-                        STROKE_COLOUR, BORDER_WIDTH,
-                        int(radius/MAX_RADIUS*255), 255-int(radius/MAX_RADIUS*255)
-                        ))
+                    fill = get_hex_fill(radius, MAX_RADIUS)
+                    file.write(svg_circle(X[i], Y[i], radius, fill))
                     counter += 1
+
+
+            # Draw legend
+            if results:
+                legend_offset = 50
+                x, y = positions[self.__nodes-1][0]+OFFSET, legend_offset
+                # Draw rectangle
+                file.write(svg_rectangle(x-10, y-10, 12*MAX_RADIUS, 8*MAX_RADIUS))
+                # Write heading
+                file.write(svg_text(x-10+6*MAX_RADIUS, y/2, "Noise levels"))
+                # Draw 3 samples
+                file.write(svg_circle(x+MAX_RADIUS, y+MAX_RADIUS, MAX_RADIUS, get_hex_fill(120, 120)))
+                file.write(svg_text(x+6*MAX_RADIUS, y+MAX_RADIUS, "120 dB (Ambulance siren)"))
+                file.write(svg_circle(x+MAX_RADIUS, y+4*MAX_RADIUS, 85/120*MAX_RADIUS, get_hex_fill(85, 120)))
+                file.write(svg_text(x+6*MAX_RADIUS, y+4*MAX_RADIUS, "85 dB (Heavy city traffic)"))
+                file.write(svg_circle(x+MAX_RADIUS, y+7*MAX_RADIUS, 30/120*MAX_RADIUS, get_hex_fill(30, 120)))
+                file.write(svg_text(x+6*MAX_RADIUS, y+7*MAX_RADIUS, "30 dB (Whispered voice)"))
             file.write("</svg>\n")
-            if HTML:
-                file.write("</body></html>")

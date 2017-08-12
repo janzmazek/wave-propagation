@@ -17,7 +17,6 @@ class Controller(object):
         self.release_point = False
         self.modified = False
         self.selected = False
-        self.numbered = False
 
     def done_creating(self, horizontals, verticals, length):
         try:
@@ -171,12 +170,10 @@ class Controller(object):
     def done_customising(self):
         self.view.switch_tools("ModelTools")
         self.selected = False
-        self.numbered = True
         self.view.refresh_canvas(self.constructor.get_modified_adjacency(),
                                  self.constructor.get_positions(),
                                  modified=self.modified,
-                                 selected=self.selected,
-                                 numbered=self.numbered
+                                 selected=self.selected
                                  )
 
     def compute_click(self, source, receiver, threshold):
@@ -247,8 +244,7 @@ class Controller(object):
         self.view.refresh_canvas(adjacency,
                                  self.constructor.get_positions(),
                                  modified=self.modified,
-                                 selected=self.selected,
-                                 numbered=self.numbered
+                                 selected=self.selected
                                  )
 
     def __import_network(self, filename):
@@ -263,7 +259,6 @@ class Controller(object):
         else:
             self.view.switch_tools("ModelTools")
             self.modified = True
-            self.numbered = True
             self.view.remove_binds()
 
     def window_click(self, option):
@@ -274,7 +269,7 @@ class Controller(object):
             return
         if option in ["CreationTools", "MovingTools", "DeletingTools", "ModifyingTools"]:
             self.constructor.unmodify_adjacency()
-            self.modified, self.numbered = False, False
+            self.modified = False
             if option == "CreationTools":
                 self.constructor.unset_grid()
             elif option == "MovingTools":

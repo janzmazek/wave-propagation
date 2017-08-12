@@ -8,10 +8,22 @@ from source.components.menu import Menu
 from source.components.canvas import Canvas
 from source.components.tools import *
 
+# Window parameters
 WIDTH = 1000
 HEIGHT = 600
 SCALE = 1.5
-CANVAS_BACKGROUND = "cadet blue"
+
+# Adobe flat UI colour scheme
+DARK_BLUE = "#2C3E50"
+MEDIUM_BLUE = "#2980B9"
+LIGHT_BLUE = "#3498DB"
+RED = "#E74C3C"
+WHITE = "#ECF0F1"
+
+# Colour parameters
+CANVAS_BACKGROUND = WHITE
+
+# Dimensions
 FRAME_OPTIONS = {"padx":10}
 
 class View(tk.Tk):
@@ -66,12 +78,11 @@ class View(tk.Tk):
             raise ValueError("No such tools.")
         self.toolbar.pack(fill=tk.BOTH, expand=tk.NO)
 
-    def refresh_canvas(self, adjacency, positions, modified, selected=False,
-                       numbered=False):
+    def refresh_canvas(self, adjacency, positions, modified, selected=False):
         """
         This method refreshes canvas based on the received data.
         """
-        self.canvas.refresh_canvas(adjacency, positions, modified, selected, numbered)
+        self.canvas.refresh_canvas(adjacency, positions, modified, selected)
 
     def remove_binds(self):
         """

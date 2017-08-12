@@ -248,26 +248,28 @@ class Model(object):
 
         def compose_function(theta):
             # Scalar coefficient and first street element
-            complete = 1/np.pi
-            # First street wall absorption
-            complete *= (1-alphas[0])**(lengths[0]/widths[0]*np.tan(theta))
-            # First street air absorption
-            complete *= (1-betas[0])**(lengths[0]/widths[0]/np.cos(theta))
-            for i in range(1, len(path)-1):
+            complete = widths[0]/widths[-1]/np.pi
+            for i in range(len(rotations)):
                 # Rotate angle by 90 degrees if orientation changes
                 if rotations[i] == 1:
                     angle = np.pi/2 - theta
                 else:
                     angle = theta
-                # Junction function
-                complete *= functions[i-1](angle)
                 # Wall absorption
                 complete *= (1-alphas[i])**(lengths[i]/widths[i]*np.tan(angle))
                 # Air absorption
                 complete *= (1-betas[i])**(lengths[i]/widths[i]/np.cos(angle))
-
+                # Cosinus element
+                complete *= 1/np.cos(angle)
+            for i in range(len(functions)):
+                # Rotate angle by 90 degrees if orientation changes
+                if rotations[i] == 1:
+                    angle = np.pi/2 - theta
+                else:
+                    angle = theta
+                # Junction probability distribution function
+                complete *= functions[i](angle)
             return complete
-            # Thesis page 85 - add /cos and 1/width
 
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)
         print("Contribution from path {0}: {1} (error {2})".format(

@@ -2,6 +2,15 @@ from unittest import TestCase
 from source.constructor import Constructor
 
 class TestConstructor(TestCase):
+    def test_setters(self):
+        network = Constructor()
+        with self.assertRaises(ValueError):
+            network.set_grid(-1, 1, 100)
+        with self.assertRaises(ValueError):
+            network.set_grid(1, -1, 100)
+        with self.assertRaises(ValueError):
+            network.set_grid(2, 2, -10)
+
     def test_create_adjacency(self):
         # Test normal usage
         network = Constructor()
@@ -69,13 +78,13 @@ class TestConstructor(TestCase):
         positions = network.get_positions()
         self.assertEqual(len(adjacency),22)
         self.assertEqual(len(positions),22)
-        network.modify_adjacency(10, 0.5)
+        network.modify_adjacency(10, 0.5, 0.5)
 
     def test_modify_adjacency(self):
         # Test normal usage
         network = Constructor()
         network.set_grid(5,5,100)
-        network.modify_adjacency(10, 0.5)
+        network.modify_adjacency(10, 0.1, 0.1)
         adjacency = network.get_adjacency()
         modified_adjacency = network.get_modified_adjacency()
         self.assertEqual(len(modified_adjacency),25)
@@ -86,11 +95,15 @@ class TestConstructor(TestCase):
                 else:
                     self.assertFalse(modified_adjacency[i][j]==0)
 
+        with self.assertRaises(ValueError): # width=0
+            network.modify_adjacency(0, 0.1, 0.1)
+
+
     def test_change_width(self):
         # Test normal usage
         network = Constructor()
         network.set_grid(5,5,100)
-        network.modify_adjacency(20, 0.5)
+        network.modify_adjacency(20, 0.1, 0.1)
         network.change_width(0,1,50)
         adjacency = network.get_adjacency()
         modified_adjacency = network.get_modified_adjacency()
@@ -114,7 +127,7 @@ class TestConstructor(TestCase):
         # Test normal usage
         network = Constructor()
         network.set_grid(5,5,100)
-        network.modify_adjacency(10, 0.8)
+        network.modify_adjacency(10, 0.8, 0.1)
         network.change_alpha(0,1,0.5)
         adjacency = network.get_adjacency()
         modified_adjacency = network.get_modified_adjacency()
@@ -134,6 +147,30 @@ class TestConstructor(TestCase):
         with self.assertRaises(ValueError): # nodes out of range
             network.change_alpha(0,25,0.5)
 
+    def test_change_beta(self):
+        # Test normal usage
+        network = Constructor()
+        network.set_grid(5,5,100)
+        network.modify_adjacency(10, 0.1, 0.8)
+        network.change_beta(0,1,0.5)
+        adjacency = network.get_adjacency()
+        modified_adjacency = network.get_modified_adjacency()
+        self.assertEqual(modified_adjacency[0][1]["beta"],0.5)
+        self.assertEqual(modified_adjacency[1][0]["beta"],0.5)
+        for i in range(1, 25):
+            for j in range(1, 25):
+                if adjacency[i][j]==1:
+                    self.assertEqual(modified_adjacency[i][j]["beta"],0.8)
+        # Test wrong usage
+        with self.assertRaises(ValueError): # alpha>1
+            network.change_beta(0,1,2)
+        with self.assertRaises(ValueError): # alpha<0
+            network.change_beta(0,1,-1)
+        with self.assertRaises(ValueError): # nodes not neighbours
+            network.change_beta(0,2,0.5)
+        with self.assertRaises(ValueError): # nodes out of range
+            network.change_beta(0,25,0.5)
+
     def test_staging(self):
         network = Constructor()
         network.set_grid(5,5,100)
@@ -143,7 +180,7 @@ class TestConstructor(TestCase):
         with self.assertRaises(AssertionError):
             network.move_vertical_line(0,10)
 
-        network.modify_adjacency(10, 0.5)
+        network.modify_adjacency(10, 0.5, 0.5)
         with self.assertRaises(AssertionError): # no moving after modifying
             network.move_vertical_line(0,10)
         with self.assertRaises(AssertionError):

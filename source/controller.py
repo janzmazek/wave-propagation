@@ -1,4 +1,5 @@
 import json
+import os
 
 class Controller(object):
     """
@@ -184,7 +185,7 @@ class Controller(object):
             self.model.set_source(starting_1, starting_2)
             self.model.set_receiver(ending_1, ending_2)
             self.model.set_threshold(threshold)
-            (power, error) = self.model.solve()
+            (power, error, paths) = self.model.solve()
         except ValueError as e:
             self.view.show_message("Error", e)
             return
@@ -293,7 +294,9 @@ class Controller(object):
         self.view.refresh_canvas(adjacency, positions, self.modified)
 
     def about_click(self):
-        with open("wave-propagation/source/about.txt", "r") as file:
+        __location__ = os.path.realpath(
+            os.path.join(os.getcwd(), os.path.dirname(__file__)))
+        with open(os.path.join(__location__, "../about.txt"), "r") as file:
             content = file.read()
         self.view.show_message("About", content)
         return

@@ -51,7 +51,8 @@ class Canvas(tk.Canvas):
             self.__draw_streets(adjacency, positions, modified)
         if selected:
             self.__select_street(positions, selected)
-        self.__draw_junctions(positions)
+        if positions is not None:
+            self.__draw_junctions(positions)
 
     def __draw_streets(self, adjacency, positions, modified):
         """

@@ -198,7 +198,7 @@ class Constructor(object):
             beta = float(beta)
         except ValueError:
             raise ValueError("Width and absorption must be floating point numbers.")
-        if width < 0:
+        if width <= 0:
             raise ValueError("Width must be a positive number.")
         if alpha < 0 or alpha > 1 or beta < 0 or beta > 1:
             raise ValueError("Absorption must be a number between 0 and 1.")

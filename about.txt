@@ -1,0 +1,3 @@
+# Probabilistic Wave Propagation Model
+
+This Python package implements a probabilistic model for solving a high-frequency source-receiver problem in an urban environment. 

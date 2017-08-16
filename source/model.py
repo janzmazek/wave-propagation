@@ -5,9 +5,11 @@ orientation).
 """
 import numpy as np
 import scipy.integrate as integrate
-import networkx as nx
+from collections import defaultdict
 
 from source.junction import Junction
+
+import time
 
 class Model(object):
     """
@@ -28,7 +30,19 @@ class Model(object):
         """
         self.__modified_adjacency = modified_adjacency
         self.__nodes = len(modified_adjacency)
-        self.__graph = nx.from_numpy_matrix(self.__create_adjacency())
+        self.__set_graph(modified_adjacency)
+
+    def __set_graph(self, modified_adjacency):
+        """
+        This method returns normal adjacency matrix from modified adjacency
+        matrix.
+        """
+        graph = defaultdict(set)
+        for i in range(self.__nodes):
+            for j in range(self.__nodes):
+                if modified_adjacency[i][j] != 0:
+                    graph[i].add(j)
+        self.__graph = graph
 
     def set_source(self, source1, source2):
         """
@@ -43,7 +57,7 @@ class Model(object):
             raise ValueError("First source node not in range.")
         if source2 < 0 or source2 > self.__nodes:
             raise ValueError("Second source node not in range.")
-        if source2 not in self.__graph.neighbors(source1):
+        if source2 not in self.__graph[source1]:
             raise ValueError("Sources are not neighbours.")
         self.__source = (source1, source2)
 
@@ -60,7 +74,7 @@ class Model(object):
             raise ValueError("First receiver node not in range.")
         if receiver2 < 0 or receiver2 > self.__nodes:
             raise ValueError("Second receiver node not in range.")
-        if receiver2 not in self.__graph.neighbors(receiver1):
+        if receiver2 not in self.__graph[receiver1]:
             raise ValueError("Receivers are not neighbours.")
         self.__receiver = (receiver1, receiver2)
 
@@ -76,25 +90,15 @@ class Model(object):
             raise ValueError("Threshold must be a positive number.")
         self.__threshold = threshold
 
-    def __create_adjacency(self):
-        """
-        This method returns normal adjacency matrix from modified adjacency
-        matrix.
-        """
-        adjacency = np.zeros((self.__nodes, self.__nodes))
-        for i in range(self.__nodes):
-            for j in range(self.__nodes):
-                if self.__modified_adjacency[i][j] != 0:
-                    adjacency[i][j] = 1
-        return adjacency
-
     def solve(self):
         """
         This method is the main method of the class and solves the wave
         propagation problem.
         """
         assert self.__source is not None and self.__receiver is not None and self.__threshold is not None
+        start = time.time()
         paths = self.__compute_paths() # obtain all connecting paths
+        print("Number of paths is {}".format(len(paths)))
         power = 0
         error = 0
         for path in paths:
@@ -105,7 +109,7 @@ class Model(object):
         print("==========================================")
         print("Resulting power from node {0} to node {1} is {2} (error {3})".format(
             self.__source, self.__receiver, power, error))
-        return (power, error) # resulting power flow
+        return (power, error, paths) # resulting power flow
 
     def __compute_paths(self):
         """
@@ -116,7 +120,7 @@ class Model(object):
         # Find lengths of all four combinations
         for source in self.__source:
             for receiver in self.__receiver:
-                lengths.append(nx.shortest_path_length(self.__graph, source, receiver))
+                lengths.append(self.__dijkstra(source)[receiver])
         # Find minimal length and compute cutoff
         shortest_length = min(lengths)
         cutoff = shortest_length + self.__threshold
@@ -135,11 +139,11 @@ class Model(object):
         """
         # Compute distances dictionary only the first time
         if not distances:
-            distances = nx.all_pairs_dijkstra_path_length(self.__graph)[receiver]
+            distances = self.__dijkstra(receiver)
         paths = []
         # Recursive algorithm
         if n > 0:
-            for neighbor in self.__graph.neighbors(element):
+            for neighbor in self.__graph[element]:
                 for path in self.__find_paths(neighbor, receiver, n-1, distances):
                     if distances[element] < n:
                         paths.append([element]+path)
@@ -147,6 +151,27 @@ class Model(object):
         if element == receiver:
             paths.append([element])
         return paths
+
+    def __dijkstra(self, source):
+        distances = {source: 0}    # Shortest lengths dictionary
+        nodes = set(self.__graph)    # Set of graph nodes
+        while nodes:
+            min_node = None
+            for node in nodes:
+                if node in distances:
+                    if min_node is None:
+                        min_node = node
+                    elif distances[node] < distances[min_node]:
+                        min_node = node
+            if min_node is None:
+                break
+            nodes.remove(min_node)
+            current_length = distances[min_node]
+            for edge in self.__graph[min_node]:
+                length = current_length + 1
+                if edge not in distances or length < distances[edge]:
+                    distances[edge] = length
+        return distances
 
     def __walk(self, path):
         """
@@ -215,7 +240,7 @@ class Model(object):
         forward = (orientation+2)%4
         left = (orientation+3)%4
         rotated = {}
-        for neighbor in self.__graph.neighbors(current):
+        for neighbor in self.__graph[current]:
             if self.__modified_adjacency[current][neighbor]["orientation"] == left:
                 rotated["left"] = self.__modified_adjacency[current][neighbor]["width"]
                 if following == neighbor:
@@ -258,7 +283,7 @@ class Model(object):
                 # Wall absorption
                 complete *= (1-alphas[i])**(lengths[i]/widths[i]*np.tan(angle))
                 # Air absorption
-                complete *= (1-betas[i])**(lengths[i]/widths[i]/np.cos(angle))
+                complete *= (1-betas[i])**(lengths[i]/np.cos(angle))
                 # Cosinus element
                 complete *= 1/np.cos(angle)
             for i in range(len(functions)):

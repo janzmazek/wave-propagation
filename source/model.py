@@ -23,6 +23,7 @@ class Model(object):
         self.__source = None
         self.__receiver = None
         self.__threshold = None
+        self.__height = False
 
     def set_adjacency(self, modified_adjacency):
         """
@@ -89,6 +90,18 @@ class Model(object):
         if threshold < 0:
             raise ValueError("Threshold must be a positive number.")
         self.__threshold = threshold
+
+    def set_height(self, height):
+        try:
+            height = int(height)
+        except ValueError:
+            raise ValueError("Height must be an floating point number.")
+        if height < 0:
+            raise ValueError("Height must be a positive number.")
+        if height == 0:
+            self.__height = False
+        else:
+            self.__height = height
 
     def solve(self):
         """
@@ -274,26 +287,20 @@ class Model(object):
         def compose_function(theta):
             # Scalar coefficient and first street element
             complete = widths[0]/widths[-1]/np.pi
+            if self.__height:
+                complete *= 2*self.__height
             for i in range(len(rotations)):
-                # Rotate angle by 90 degrees if orientation changes
-                if rotations[i] == 1:
-                    angle = np.pi/2 - theta
-                else:
-                    angle = theta
-                # Wall absorption
-                complete *= (1-alphas[i])**(lengths[i]/widths[i]*np.tan(angle))
-                # Air absorption
-                complete *= (1-betas[i])**(lengths[i]/np.cos(angle))
-                # Cosinus element
-                complete *= 1/np.cos(angle)
+                angle = np.pi/2-theta if rotations[i]==1 else theta # angle rotation
+                A = (1-alphas[i])**(lengths[1]/widths[i]*np.tan(angle)) # wall absorption
+                B = np.exp(-betas[i]*lengths[i]/np.cos(angle)) # air absorption
+                complete *= A*B/np.cos(angle)
+                if self.__height:
+                    L = lengths[i]/np.cos(angle)
+                    complete = complete/L
+
             for i in range(len(functions)):
-                # Rotate angle by 90 degrees if orientation changes
-                if rotations[i] == 1:
-                    angle = np.pi/2 - theta
-                else:
-                    angle = theta
-                # Junction probability distribution function
-                complete *= functions[i](angle)
+                angle = np.pi/2-theta if rotations[i]==1 else theta # angle rotation
+                complete *= functions[i](angle) # Junction probability distribution function
             return complete
 
         (integral, error) = integrate.quad(compose_function, 0, np.pi/2)

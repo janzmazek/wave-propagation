@@ -177,7 +177,7 @@ class Controller(object):
                                  selected=self.selected
                                  )
 
-    def compute_click(self, source, receiver, threshold):
+    def compute_click(self, source, receiver, threshold, height):
         (starting_1, starting_2) = source
         (ending_1, ending_2) = receiver
         self.model.set_adjacency(self.constructor.get_modified_adjacency())
@@ -185,6 +185,7 @@ class Controller(object):
             self.model.set_source(starting_1, starting_2)
             self.model.set_receiver(ending_1, ending_2)
             self.model.set_threshold(threshold)
+            self.model.set_height(height)
             (power, error, paths) = self.model.solve()
         except ValueError as e:
             self.view.show_message("Error", e)
@@ -193,12 +194,13 @@ class Controller(object):
         error = format(error*100, '.3f')
         self.view.show_message("Result", "Power: {0} % ± {1} %".format(power, error))
 
-    def compute_all_click(self, source, threshold):
+    def compute_all_click(self, source, threshold, height):
         starting_1, starting_2 = source
         self.model.set_adjacency(self.constructor.get_modified_adjacency())
         try:
             self.model.set_source(starting_1, starting_2)
             self.model.set_threshold(threshold)
+            self.model.set_height(height)
         except ValueError as e:
             self.view.show_message("Error", e)
             return

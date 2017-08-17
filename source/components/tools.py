@@ -254,6 +254,13 @@ class ModelTools(tk.LabelFrame):
         threshold_label.pack(side=tk.LEFT)
         self.threshold_entry = tk.Entry(self, width=ENTRY_WIDTH)
         self.threshold_entry.pack(side=tk.LEFT)
+        height_label = tk.Label(self,
+                                text="Height:",
+                                padx=PADX
+                                )
+        height_label.pack(side=tk.LEFT)
+        self.height_entry = tk.Entry(self, width=ENTRY_WIDTH)
+        self.height_entry.pack(side=tk.LEFT)
         compute_button = tk.Button(self,
                                    text="Compute",
                                    command=self.compute_click
@@ -274,11 +281,14 @@ class ModelTools(tk.LabelFrame):
         ending_1 = self.ending_entry_1.get()
         ending_2 = self.ending_entry_2.get()
         threshold = self.threshold_entry.get()
+        height = self.height_entry.get()
         if threshold == '':
             threshold = DEFAULT_THRESHOLD
+        if height == '':
+            height = False
         source = (starting_1, starting_2)
         receiver = (ending_1, ending_2)
-        self.view.controller.compute_click(source, receiver, threshold)
+        self.view.controller.compute_click(source, receiver, threshold, height)
     def compute_all_click(self):
         """
         This method is triggered when the "compute all" button is clicked.
@@ -286,7 +296,10 @@ class ModelTools(tk.LabelFrame):
         starting_1 = self.starting_entry_1.get()
         starting_2 = self.starting_entry_2.get()
         threshold = self.threshold_entry.get()
+        height = self.height_entry.get()
         if threshold == '':
             threshold = DEFAULT_THRESHOLD
+        if height == '':
+            height = False
         source = (starting_1, starting_2)
-        self.view.controller.compute_all_click(source, threshold)
+        self.view.controller.compute_all_click(source, threshold, height)

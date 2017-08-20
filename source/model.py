@@ -1,6 +1,6 @@
 """
 This module performs probabilistic model on some network of streets given by
-the modified adjacency matrix (with dictionary of length, width, alpha,
+the modified adjacency matrix (with dictionary of length, width, alpha, beta,
 orientation).
 """
 import numpy as np
@@ -9,12 +9,10 @@ from collections import defaultdict
 
 from source.junction import Junction
 
-import time
-
 class Model(object):
     """
-    This class of methods is the core part of the Probabilistic wave
-    propagation model.
+    This class of methods is the core part of the Probabilistic ray model of
+    energy propagation.
     """
     def __init__(self):
         self.__modified_adjacency = None
@@ -109,7 +107,6 @@ class Model(object):
         propagation problem.
         """
         assert self.__source is not None and self.__receiver is not None and self.__threshold is not None
-        start = time.time()
         paths = self.__compute_paths() # obtain all connecting paths
         print("Number of paths is {}".format(len(paths)))
         power = 0
@@ -284,29 +281,34 @@ class Model(object):
         alphas = integrand["alphas"]
         betas = integrand["betas"]
 
-        def compose_function(theta):
-            # Scalar coefficient and first street element
-            complete = widths[0]/widths[-1]/np.pi
-            if self.__height:
-                complete *= 2*self.__height
+        def compose_f(theta):
+            f = 2*self.__height/np.pi if self.__height else 1/np.pi
             for i in range(len(rotations)):
                 angle = np.pi/2-theta if rotations[i]==1 else theta # angle rotation
-                A = (1-alphas[i])**(lengths[1]/widths[i]*np.tan(angle)) # wall absorption
+                A = (1-alphas[i])**(lengths[i]/widths[i]*np.tan(angle)) # wall absorption
                 B = np.exp(-betas[i]*lengths[i]/np.cos(angle)) # air absorption
-                complete *= A*B/np.cos(angle)
-                if self.__height:
-                    L = lengths[i]/np.cos(angle)
-                    complete = complete/L
+                f *= A*B/np.cos(angle)
 
             for i in range(len(functions)):
                 angle = np.pi/2-theta if rotations[i]==1 else theta # angle rotation
-                complete *= functions[i](angle) # Junction probability distribution function
-            return complete
+                f *= functions[i](angle) # Junction probability distribution function
+            return f
 
-        (integral, error) = integrate.quad(compose_function, 0, np.pi/2)
+        def compose_L(theta):
+            L = 1
+            for i in range(len(rotations)):
+                angle = np.pi/2-theta if rotations[i]==1 else theta # angle rotation
+                L += lengths[i]/np.cos(angle)
+            return L
+
+        if not self.__height: # 2D
+            (energy, error) = integrate.quad(compose_f, 0, np.pi/2)
+        else: # 3D
+            integrand = lambda theta: compose_f(theta)/compose_L(theta)
+            (energy, error) = integrate.quad(integrand, 0, np.pi/2)
         print("Contribution from path {0}: {1} (error {2})".format(
-            path, integral, error))
-        return (integral, error)
+            path, energy, error))
+        return (energy, error)
 
     def solve_all(self, positions):
         """

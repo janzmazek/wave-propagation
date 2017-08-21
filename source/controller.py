@@ -192,7 +192,7 @@ class Controller(object):
             return
         power = format(power*100, '.3f')
         error = format(error*100, '.3f')
-        self.view.show_message("Result", "Power: {0} % ± {1} %".format(power, error))
+        self.view.show_message("Result", "Mean square pressure: {0} % ± {1} %".format(power, error))
 
     def compute_all_click(self, source, threshold, height):
         starting_1, starting_2 = source

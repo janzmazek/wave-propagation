@@ -31,7 +31,7 @@ class View(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         super(View, self).__init__(*args, **kwargs)
-        self.title("Probabilistic Wave Propagation Model")
+        self.title("Probabilistic ray model of energy propagation")
 
         self.menu = Menu(self)
         self.config(menu=self.menu)

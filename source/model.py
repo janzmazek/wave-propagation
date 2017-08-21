@@ -286,7 +286,7 @@ class Model(object):
             for i in range(len(rotations)):
                 angle = np.pi/2-theta if rotations[i]==1 else theta # angle rotation
                 A = (1-alphas[i])**(lengths[i]/widths[i]*np.tan(angle)) # wall absorption
-                B = np.exp(-betas[i]*lengths[i]/np.cos(angle)) # air absorption
+                B = np.exp(-2*betas[i]*lengths[i]/np.cos(angle)) # air absorption
                 f *= A*B/np.cos(angle)
 
             for i in range(len(functions)):

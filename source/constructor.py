@@ -15,7 +15,7 @@ WHITE = "#ECF0F1"
 # Colour parameters
 STREET_COLOUR = DARK_BLUE
 JUNCTION_COLOUR = MEDIUM_BLUE
-STROKE_COLOUR = "black"
+STROKE_COLOUR = DARK_BLUE
 LEGEND_BACKGROUND = WHITE
 
 # Dimensions
@@ -29,6 +29,9 @@ INITIAL_DECIBELS = 120
 
 # Max absorption
 MAX_ABSORPTION = 0.1
+
+# Don't plot absorption coefficients (option)
+ABSORPTION = False
 
 
 class Constructor(object):
@@ -388,13 +391,13 @@ class Constructor(object):
 
         def svg_line(x1, y1, x2, y2, fill=STREET_COLOUR, width=STREET_WIDTH):
             return "<line x1='{0}' y1='{1}' x2='{2}' y2='{3}' \
-style='stroke: {4}; stroke-width:{5}'/>\n".format(x1+OFFSET, y1+OFFSET,
+style='stroke: {4}; stroke-width: {5}'/>\n".format(x1+OFFSET, y1+OFFSET,
                                                   x2+OFFSET, y2+OFFSET,
                                                   fill, width)
 
         def svg_square(x, y):
             return "<rect x='{0}' y='{1}' width='{2}' height='{2}' \
-stroke='{3}' stroke-width='{4}' fill='{5}'/>\n".format(x-JUNCTION_WIDTH/2+OFFSET,
+style='stroke: {3}; stroke-width: {4}; fill: {5}'/>\n".format(x-JUNCTION_WIDTH/2+OFFSET,
                                                        y-JUNCTION_WIDTH/2+OFFSET,
                                                        JUNCTION_WIDTH,
                                                        STROKE_COLOUR,
@@ -403,8 +406,8 @@ stroke='{3}' stroke-width='{4}' fill='{5}'/>\n".format(x-JUNCTION_WIDTH/2+OFFSET
                                                        )
 
         def svg_circle(x, y, r, fill):
-            return "<circle cx='{0}' cy='{1}' r='{2}' stroke='{3}' \
-stroke-width='{4}' fill='{5}'\n/>".format(x+OFFSET,
+            return "<circle cx='{0}' cy='{1}' r='{2}' style='stroke: {3}; \
+stroke-width: {4}; fill: {5}'/>\n".format(x+OFFSET,
                                            y+OFFSET,
                                            r,
                                            STROKE_COLOUR,
@@ -414,15 +417,15 @@ stroke-width='{4}' fill='{5}'\n/>".format(x+OFFSET,
 
         def svg_text(x, y, number):
             return "<text text-anchor='middle' x='{0}' y='{1}' \
-fill='{2}'>{3}</text>\n".format(x+OFFSET,
+style='fill: {2}'>{3}</text>\n".format(x+OFFSET,
                                 y+OFFSET+JUNCTION_WIDTH/4,
                                 STROKE_COLOUR,
                                 number
                                 )
 
         def svg_rectangle(x, y, width, height):
-            return "<rect x='{0}' y='{1}' width='{2}' height='{3}'\
-stroke='{4}' stroke-width='{5}' fill='{6}'/>\n".format(x+OFFSET, y+OFFSET,
+            return "<rect x='{0}' y='{1}' width='{2}' height='{3}' \
+style='stroke: {4}; stroke-width: {5}; fill: {6}'/>\n".format(x+OFFSET, y+OFFSET,
                                                          width, height,
                                                          STROKE_COLOUR,
                                                          STROKE_WIDTH,
@@ -444,7 +447,7 @@ stroke='{4}' stroke-width='{5}' fill='{6}'/>\n".format(x+OFFSET, y+OFFSET,
                 width += LEGEND_WIDTH
             file.write(svg_header(width, height))
             # Draw walls if modified (with absorption)
-            if modified:
+            if modified and ABSORPTION:
                 for i in range(self.__nodes):
                     for j in range(i):
                         if adjacency[i][j] != 0:
@@ -480,7 +483,7 @@ stroke='{4}' stroke-width='{5}' fill='{6}'/>\n".format(x+OFFSET, y+OFFSET,
                     if adjacency[i][j] != 0:
                         [xi, yi] = positions[i]
                         [xj, yj] = positions[j]
-                        if not modified:
+                        if not modified or not ABSORPTION:
                             file.write(svg_line(xi, yi, xj, yj))
                         else:
                             beta = adjacency[i][j]["beta"]

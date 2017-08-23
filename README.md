@@ -22,7 +22,7 @@ Package modules Constructor and Model may be used separately.
 ```python
 from source.constructor import Constructor
 network = Constructor() # initialises constructor object
-network.set_grid(4,5,100)
+network.set_grid(4,5,100) # sets number of horizontal streets to 4, vertical streets to 5 and street length to 100
 network.move_horizontal_line(2,10) # moves third horizontal line by 10 (right)
 network.move_vertical_line(1,-30) # moves second vertical line by 30 (left)
 network.delete_connection(6,11) # deletes street (5,6)
@@ -36,10 +36,11 @@ Model class performs the algorithm on the constructed network:
 from source.model import Model
 model = Model() # initialises model object
 model.set_adjacency(network.get_modified_adjacency()) # sets adjacency
-model.set_source(0, 1) # sets source to 0
-model.set_receiver(18, 19) # sets receiver to 1
+model.set_source(0, 1) # sets source between junctions 0 and 1
+model.set_receiver(18, 19) # sets receiver between junctions 18 and 19
 model.set_threshold(2) # sets threshold to 2
 power = model.solve() # computes power percentage
+print("Power percentage is {0}".format(power[0]))
 ```
 Output solutions of all possible receivers along with their coordinates:
 ```python
@@ -49,3 +50,4 @@ Plot results:
 ```python
 network.draw_network("solution.svg", (X,Y,Z))
 ```
+![](images/solution.png?raw=true)

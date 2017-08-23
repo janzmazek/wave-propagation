@@ -1,23 +1,23 @@
 # Wave propagation
 Implementation of the wave propagation model in an urban streets environment.
 
-# Installation
-
+## Downloading and running application
 To clone and run this application, run commands
 ```bash
 git clone https://github.com/janzmazek/wave-propagation.git
 python wave-propagation
 ```
 The application must be run using Python 3 with Numpy and Scipy installed.
+![](images/application.png?raw=true)
 
-# Testing
+## Testing
 To run unit tests, run command
 ```bash
 python -m unittest
 ```
 inside package's main directory.
 
-# Usage examples
+## Usage examples
 Package modules Constructor and Model may be used separately.
 ```python
 from source.constructor import Constructor

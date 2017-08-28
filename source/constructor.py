@@ -13,14 +13,15 @@ RED = "#E74C3C"
 WHITE = "#ECF0F1"
 
 # Colour parameters
+STROKE_COLOUR = DARK_BLUE
 STREET_COLOUR = DARK_BLUE
 JUNCTION_COLOUR = MEDIUM_BLUE
-STROKE_COLOUR = DARK_BLUE
-LEGEND_BACKGROUND = WHITE
+JUNCTION_TEXT = DARK_BLUE
+RESULTS_COLOUR = RED
+RESULTS_TEXT = DARK_BLUE
 
 # Dimensions
 OFFSET = 50
-LEGEND_WIDTH = 300
 STREET_WIDTH = 8
 STROKE_WIDTH = 2
 JUNCTION_WIDTH = 20
@@ -415,22 +416,15 @@ stroke-width: {4}; fill: {5}'/>\n".format(x+OFFSET,
                                            fill
                                            )
 
-        def svg_text(x, y, number):
+        def svg_text(x, y, colour, size, text):
+            move = (size-15)/4 # adjust text position
             return "<text text-anchor='middle' x='{0}' y='{1}' \
-style='fill: {2}'>{3}</text>\n".format(x+OFFSET,
-                                y+OFFSET+JUNCTION_WIDTH/4,
-                                STROKE_COLOUR,
-                                number
+style='fill: {2}; font-size: {3}'>{4}</text>\n".format(x+OFFSET,
+                                y+OFFSET+JUNCTION_WIDTH/4 + move,
+                                colour,
+                                size,
+                                text
                                 )
-
-        def svg_rectangle(x, y, width, height):
-            return "<rect x='{0}' y='{1}' width='{2}' height='{3}' \
-style='stroke: {4}; stroke-width: {5}; fill: {6}'/>\n".format(x+OFFSET, y+OFFSET,
-                                                         width, height,
-                                                         STROKE_COLOUR,
-                                                         STROKE_WIDTH,
-                                                         LEGEND_BACKGROUND
-                                                         )
 
         positions = self.__positions
         if self.__stage == 3:
@@ -443,8 +437,6 @@ style='stroke: {4}; stroke-width: {5}; fill: {6}'/>\n".format(x+OFFSET, y+OFFSET
         with open(filename, "w") as file:
             width = positions[self.__nodes-1][0]+2*OFFSET
             height = positions[self.__nodes-1][1]+2*OFFSET
-            if results:
-                width += LEGEND_WIDTH
             file.write(svg_header(width, height))
             # Draw walls if modified (with absorption)
             if modified and ABSORPTION:
@@ -497,34 +489,20 @@ style='stroke: {4}; stroke-width: {5}; fill: {6}'/>\n".format(x+OFFSET, y+OFFSET
             counter = 0
             for position in positions:
                 file.write(svg_square(position[0], position[1]))
-                file.write(svg_text(position[0], position[1], counter))
+                file.write(svg_text(position[0], position[1], JUNCTION_TEXT, 15, counter))
                 counter += 1
 
             # Draw results
             if results:
                 (X, Y, Z) = results
                 for i in range(len(Z)):
-                    radius = 20*np.log10(Z[i]*10**(INITIAL_DECIBELS/20))
-                    # scale radius:
-                    radius = radius/INITIAL_DECIBELS*MAX_RADIUS
-                    fill = get_hex_fill(radius, MAX_RADIUS)
-                    file.write(svg_circle(X[i], Y[i], radius, fill))
-                    counter += 1
+                    decibels = 20*np.log10(Z[i]*10**(INITIAL_DECIBELS/20))
+                    if decibels < 0:
+                        continue
+                    # Radius
+                    radius = (decibels/INITIAL_DECIBELS)*MAX_RADIUS
+                    file.write(svg_circle(X[i], Y[i], radius, RESULTS_COLOUR))
+                    if decibels > 20:
+                        file.write(svg_text(X[i], Y[i], RESULTS_TEXT, radius, int(round(decibels))))
 
-
-            # Draw legend
-            if results:
-                legend_offset = 50
-                x, y = positions[self.__nodes-1][0]+OFFSET, legend_offset
-                # Draw rectangle
-                file.write(svg_rectangle(x-10, y-10, 12*MAX_RADIUS, 8*MAX_RADIUS))
-                # Write heading
-                file.write(svg_text(x-10+6*MAX_RADIUS, y/2, "Noise levels"))
-                # Draw 3 samples
-                file.write(svg_circle(x+MAX_RADIUS, y+MAX_RADIUS, MAX_RADIUS, get_hex_fill(120, 120)))
-                file.write(svg_text(x+6*MAX_RADIUS, y+MAX_RADIUS, "120 dB (Ambulance siren)"))
-                file.write(svg_circle(x+MAX_RADIUS, y+4*MAX_RADIUS, 85/120*MAX_RADIUS, get_hex_fill(85, 120)))
-                file.write(svg_text(x+6*MAX_RADIUS, y+4*MAX_RADIUS, "85 dB (Heavy city traffic)"))
-                file.write(svg_circle(x+MAX_RADIUS, y+7*MAX_RADIUS, 30/120*MAX_RADIUS, get_hex_fill(30, 120)))
-                file.write(svg_text(x+6*MAX_RADIUS, y+7*MAX_RADIUS, "30 dB (Whispered voice)"))
-            file.write("</svg>\n")
+            file.write("</svg>")

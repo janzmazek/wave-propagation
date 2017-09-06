@@ -119,24 +119,23 @@ class Constructor(object):
         This method moves the horizontal line i.
         """
         assert self.__stage == 1
-        if i in range(self.__horizontals):
-            for node in range(self.__nodes):
-                if node//self.__verticals == i:
-                    self.__positions[node][1] += length
-        else:
+        if i not in range(self.__horizontals):
             raise ValueError("No such horizontal line.")
+        for node in range(self.__nodes):
+            if node//self.__verticals == i:
+                self.__positions[node][1] += length
 
     def move_vertical_line(self, j, length):
         """
         This method moves the vertical line j.
         """
         assert self.__stage == 1
-        if j in range(self.__verticals):
-            for node in range(self.__nodes):
-                if node%self.__verticals == j:
-                    self.__positions[node][0] += length
-        else:
+        if j not in range(self.__verticals):
             raise ValueError("No such vertical line.")
+        for node in range(self.__nodes):
+            if node%self.__verticals == j:
+                self.__positions[node][0] += length
+
 
     def delete_connection(self, i, j):
         """
@@ -263,14 +262,14 @@ class Constructor(object):
             raise ValueError("Width must be a floating point number.")
         if width <= 0:
             raise ValueError("Width must be a positive number.")
-        if i in range(self.__nodes) and j in range(self.__nodes):
-            if self.__modified_adjacency[i][j] is not 0:
-                self.__modified_adjacency[i][j]["width"] = width
-                self.__modified_adjacency[j][i]["width"] = width
-            else:
-                raise ValueError("Junctions are not neighbours.")
-        else:
+        if i not in range(self.__nodes) or j not in range(self.__nodes):
             raise ValueError("Nodes out of range")
+        if self.__modified_adjacency[i][j] == 0:
+            raise ValueError("Junctions are not neighbours.")
+
+        self.__modified_adjacency[i][j]["width"] = width
+        self.__modified_adjacency[j][i]["width"] = width
+
 
     def change_alpha(self, i, j, alpha):
         """
@@ -287,6 +286,7 @@ class Constructor(object):
             raise ValueError("Nodes out of range.")
         if self.__modified_adjacency[i][j] == 0:
             raise ValueError("Junctions are not neighbours.")
+
         self.__modified_adjacency[i][j]["alpha"] = alpha
         self.__modified_adjacency[j][i]["alpha"] = alpha
 
@@ -305,6 +305,7 @@ class Constructor(object):
             raise ValueError("Nodes out of range.")
         if self.__modified_adjacency[i][j] == 0:
             raise ValueError("Junctions are not neighbours.")
+
         self.__modified_adjacency[i][j]["beta"] = beta
         self.__modified_adjacency[j][i]["beta"] = beta
 
@@ -502,7 +503,7 @@ style='fill: {2}; font-size: {3}'>{4}</text>\n".format(x+OFFSET,
                     # Radius
                     radius = (decibels/INITIAL_DECIBELS)*MAX_RADIUS
                     file.write(svg_circle(X[i], Y[i], radius, RESULTS_COLOUR))
-                    if decibels > 20:
+                    if decibels > 30:
                         file.write(svg_text(X[i], Y[i], RESULTS_TEXT, radius, int(round(decibels))))
 
             file.write("</svg>")
